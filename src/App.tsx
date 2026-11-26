@@ -7,6 +7,7 @@ import { ConnectRoute } from './shell/Routes'
 import { OnboardingRoute } from './shell/Routes'
 import { AppShellRoute } from './shell/Routes'
 import { GlobalNotFound } from './shell/Routes'
+import { CheckpointPage } from './pages/Checkpoint'
 
 function getRpcUrl(): string {
   const url = import.meta.env.VITE_SOLANA_RPC_URL
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/" element={<ConnectRoute />} />
             <Route path="/connect" element={<ConnectRoute />} />
             <Route path="/onboarding" element={<OnboardingRoute />} />
+            <Route path="/checkpoint" element={<CheckpointPage />} />
             <Route path="/app/*" element={<AppShellRoute />} />
             <Route path="*" element={<GlobalNotFound />} />
           </Routes>
