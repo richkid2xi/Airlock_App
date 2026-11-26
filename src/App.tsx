@@ -1,22 +1,9 @@
-import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, useParams } from 'react-router'
+import { useRoute } from './router/useRoute'
+import { Landing } from './pages/Landing'
 import { Onboarding } from './pages/Onboarding'
 import { DashboardApp } from './shell/DashboardApp'
 import { Logo } from './ui/Logo'
-
-function useRoute() {
-  const [path, setPath] = useState(() => window.location.pathname)
-  useEffect(() => {
-    const onPop = () => setPath(window.location.pathname)
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [])
-  const navigate = (to: string, replace = false) => {
-    window.history[replace ? 'replaceState' : 'pushState']({}, '', to)
-    setPath(to)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-  return { path, navigate }
-}
 
 export function NotFound({ onReturn }: { onReturn: () => void }) {
   return (
@@ -31,24 +18,63 @@ export function NotFound({ onReturn }: { onReturn: () => void }) {
   )
 }
 
-export default function App() {
+function ConnectRoute() {
+  const { navigate } = useRoute()
+  return (
+    <Onboarding
+      startAt={0}
+      onWalletConnected={() => navigate('/onboarding')}
+      onComplete={() => navigate('/app')}
+    />
+  )
+}
+
+function OnboardingRoute() {
+  const { navigate } = useRoute()
+  return <Onboarding startAt={1} onComplete={() => navigate('/app')} />
+}
+
+function AppShellRoute() {
   const { path, navigate } = useRoute()
+  const params = useParams()
+  const subpath = params['*'] || ''
 
-  useEffect(() => {
-    if (path === '/') navigate('/connect', true)
-  }, [])
+  // Known routes under /app
+  const knownPrefixes = [
+    '',
+    'invoices',
+    'suppliers',
+    'agents',
+    'policies',
+    'activity',
+    'approvals',
+    'attack-lab',
+    'settings',
+  ]
+  const topSegment = subpath.split('/')[0]
 
-  if (path === '/connect' || path === '/') {
-    return <Onboarding startAt={0} onWalletConnected={() => navigate('/onboarding')} onComplete={() => navigate('/app')} />
+  if (!knownPrefixes.includes(topSegment)) {
+    return <NotFound onReturn={() => navigate('/app')} />
   }
 
-  if (path === '/onboarding') {
-    return <Onboarding startAt={1} onComplete={() => navigate('/app')} />
-  }
+  return <DashboardApp path={path} navigate={navigate} onLogout={() => navigate('/connect')} />
+}
 
-  if (path.startsWith('/app')) {
-    return <DashboardApp path={path} navigate={navigate} onLogout={() => navigate('/connect')} />
-  }
-
+function GlobalNotFound() {
+  const { navigate } = useRoute()
   return <NotFound onReturn={() => navigate('/app')} />
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/connect" element={<ConnectRoute />} />
+        <Route path="/onboarding" element={<OnboardingRoute />} />
+        <Route path="/app/*" element={<AppShellRoute />} />
+        <Route path="*" element={<GlobalNotFound />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
