@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import fs from 'node:fs'
 import path from 'node:path'
 import siteConfiguration from './.figma/make/site.json'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 
 // Vite config — https://vitejs.dev/config/
@@ -20,6 +21,10 @@ export default defineConfig(({ mode }) => {
     plugins: [
 react(),
       tailwindcss(),
+      nodePolyfills({
+        include: ['buffer'],
+        globals: { Buffer: true },
+      }),
       figmaSiteConfiguration(siteConfiguration),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
