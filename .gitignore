@@ -2,6 +2,10 @@ node_modules/
 dist/
 build/
 .cache/
+.test-results.json
+.test-results.json.bak
+packages/**/.test-results.json
+server/.test-results.json
 .env*
 .vite/
 vite.config.*.timestamp-*

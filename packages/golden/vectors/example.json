@@ -1,0 +1,46 @@
+{
+  "id": "GV-EXAMPLE-001",
+  "description": "Valid request: registered invoice, verified supplier, active agent, within per-request limit",
+  "input": {
+    "invoice": {
+      "number": "INV-2048",
+      "amountUnits": "12480000000",
+      "status": "Attested"
+    },
+    "supplier": {
+      "name": "Vercel Inc.",
+      "payoutWallet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "verificationStatus": "Verified",
+      "operationalStatus": "Active"
+    },
+    "agent": {
+      "name": "ProcureBot",
+      "status": "Active",
+      "perRequestLimitUnits": "25000000000",
+      "dailyLimitUnits": "75000000000"
+    },
+    "policy": {
+      "maxAmountUnits": "50000000000",
+      "dailyCapUnits": "150000000000",
+      "controls": {
+        "verifiedSupplierRequired": true,
+        "deliveryAttestationRequired": true,
+        "agentIntentRequired": true,
+        "supportingEvidenceRequired": true,
+        "twoPersonApproval": false
+      }
+    },
+    "request": {
+      "requestedAmountUnits": "12480000000",
+      "destinationWallet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "intent": "Settle registered software services invoice",
+      "hasEvidence": true
+    },
+    "history": []
+  },
+  "expected": {
+    "decision": "ALLOW",
+    "failedRule": null,
+    "reasonCode": "all_controls_passed"
+  }
+}

@@ -1,4 +1,4 @@
-import type { Decision, PolicyControls } from '../../src/domain/types'
+import type { Decision, PolicyControls } from '@airlock/shared'
 
 /**
  * Golden vector definition for payment requests evaluation

@@ -8,7 +8,9 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@airlock/shared": ["packages/shared/src/index.ts"],
+      "@airlock/golden": ["packages/golden/src/index.ts"]
     },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
@@ -19,5 +21,5 @@
     "strict": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "packages/shared/src", "packages/golden"]
 }

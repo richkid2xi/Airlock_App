@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import fs from 'node:fs'
 import path from 'node:path'
-
 import siteConfiguration from './.figma/make/site.json'
 
 
@@ -30,7 +29,12 @@ react(),
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        '@airlock/shared': path.resolve(__dirname, './packages/shared/src'),
+        '@airlock/golden': path.resolve(__dirname, './packages/golden/src'),
       },
+    },
+    test: {
+      include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
     },
     server: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
