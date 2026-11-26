@@ -3,7 +3,7 @@ import { Icon, type IconName } from '../ui/Icon'
 import { Status } from '../ui/Status'
 import { PageHeading } from '../ui/PageHeading'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { engineStatusStore } from '../engines/status'
+import { useEngineRegistry } from '../engines/registry'
 
 export function SettingsPage({ notify, onDisconnect }: { notify:(m:string)=>void; onDisconnect:()=>void }) {
   const [section,setSection] = useState('Organization profile')
@@ -19,7 +19,7 @@ export function SettingsPage({ notify, onDisconnect }: { notify:(m:string)=>void
     ['settings','Connected identity','Wallet identity and delegated access']
   ]
   const save = (e:FormEvent) => {e.preventDefault();notify(`${section} updated successfully.`)}
-  const engineStatuses = engineStatusStore.getSnapshot()
+  const engineStatuses = useEngineRegistry()
 
   return <><PageHeading title="Settings" description="Manage your organization, wallet identity and payment security configuration."/><div className="settings-layout"><aside className="panel settings-nav">{sections.map(x => <button className={section===x[1]?'active':''} key={x[1]} onClick={()=>setSection(x[1])}><span><Icon name={x[0] as IconName}/></span><div><b>{x[1]}</b><small>{x[2]}</small></div><Icon name="chevron"/></button>)}</aside><section className="panel settings-content">
     <div className="section-title"><div><h2>{section}</h2><p>{sections.find(x=>x[1]===section)?.[2]}</p></div></div>
