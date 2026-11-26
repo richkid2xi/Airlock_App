@@ -2,8 +2,28 @@
 $baselineJson = Get-Content .test-baseline -Raw | ConvertFrom-Json
 $baseline = $baselineJson.totalTestsBaseline
 
+# pgTAP is handled by scripts/test.sh (bash). This Windows variant runs the
+# vitest suites only and prints the same skip notice when no scratch ref is set.
+$envLocal = Join-Path $PSScriptRoot "..\.env.local"
+$supabaseTestProjectRef = ""
+if (Test-Path $envLocal) {
+  $lines = Get-Content $envLocal
+  foreach ($line in $lines) {
+    if ($line -match '^\s*SUPABASE_TEST_PROJECT_REF\s*=') {
+      $val = ($line -split '=', 2)[1]
+      $val = $val.Trim().Trim('"').Trim("'")
+      $supabaseTestProjectRef = $val
+    }
+  }
+}
+if ([string]::IsNullOrWhiteSpace($supabaseTestProjectRef)) {
+  Write-Host "pgTAP skipped: SUPABASE_TEST_PROJECT_REF is not set in .env.local (local dev mode)."
+} else {
+  Write-Host "pgTAP target: $supabaseTestProjectRef"
+}
+
 Write-Host "Running root test suite (pnpm test)..."
-$npx vitest run --reporter=json --outputFile=.test-results.json 2>&1
+& npx vitest run --reporter=json --outputFile=.test-results.json 2>&1
 if ($LASTEXITCODE -ne 0) { Write-Error "FAIL: root test exited non-zero."; exit 1 }
 
 Write-Host "Running package test suites (pnpm -r test)..."

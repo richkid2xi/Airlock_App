@@ -27,6 +27,8 @@ ENV_LOCAL="$ROOT_DIR/.env.local"
 
 # --- Load SUPABASE_TEST_PROJECT_REF from .env.local (never committed) ---
 SUPABASE_TEST_PROJECT_REF=""
+SUPABASE_APP_PROJECT_REF=""
+VITE_SUPABASE_URL=""
 if [ -f "$ENV_LOCAL" ]; then
   while IFS='=' read -r key value; do
     # Skip comments / empty lines / lines without '='
@@ -39,22 +41,46 @@ if [ -f "$ENV_LOCAL" ]; then
     if [ "$key" = "SUPABASE_APP_PROJECT_REF" ]; then
       SUPABASE_APP_PROJECT_REF="$value"
     fi
+    if [ "$key" = "VITE_SUPABASE_URL" ]; then
+      VITE_SUPABASE_URL="$value"
+    fi
   done < "$ENV_LOCAL"
 fi
 
-# --- Validate the scratch project ref ---
-if [ -z "${SUPABASE_TEST_PROJECT_REF:-}" ]; then
-  echo "ERROR: SUPABASE_TEST_PROJECT_REF is not set." >&2
-  echo "       Put SUPABASE_TEST_PROJECT_REF=<scratch-project-ref> in .env.local." >&2
-  echo "       This must be a SEPARATE scratch Supabase project, not the app project." >&2
-  echo "       The CLI auto-enables pgTAP on that project during `supabase test db`." >&2
-  exit 1
+# Derive the app/dev project ref from VITE_SUPABASE_URL so we can refuse to
+# point pgTAP at the real app project even when only the URL is configured.
+SUPABASE_DEV_PROJECT_REF=""
+if [ -n "${VITE_SUPABASE_URL:-}" ]; then
+  SUPABASE_DEV_PROJECT_REF="$(echo "$VITE_SUPABASE_URL" | sed -nE 's#^https?://([a-z0-9]+)\.supabase\.(co|in).*#\1#p')"
 fi
 
-if [ -n "${SUPABASE_APP_PROJECT_REF:-}" ] && [ "$SUPABASE_TEST_PROJECT_REF" = "$SUPABASE_APP_PROJECT_REF" ]; then
-  echo "ERROR: SUPABASE_TEST_PROJECT_REF equals SUPABASE_APP_PROJECT_REF." >&2
-  echo "       pgTAP must run against a SEPARATE scratch project, never the app project." >&2
-  exit 1
+# --- Decide whether to run pgTAP ---
+RUN_PGTAP=1
+if [ -z "${SUPABASE_TEST_PROJECT_REF:-}" ]; then
+  if [ "${CI:-}" = "true" ]; then
+    echo "ERROR: SUPABASE_TEST_PROJECT_REF is not set (CI requires pgTAP)." >&2
+    echo "       Put SUPABASE_TEST_PROJECT_REF=<scratch-project-ref> in .env.local." >&2
+    echo "       This must be a SEPARATE scratch Supabase project, not the app project." >&2
+    exit 1
+  fi
+  echo "pgTAP SKIPPED: SUPABASE_TEST_PROJECT_REF is not set in .env.local." >&2
+  echo "       Locally we only run the vitest suites. Set SUPABASE_TEST_PROJECT_REF" >&2
+  echo "       to a SEPARATE scratch Supabase project to exercise pgTAP." >&2
+  RUN_PGTAP=0
+fi
+
+if [ "$RUN_PGTAP" = "1" ]; then
+  # Never target the app project (explicit ref) or the dev project (from URL).
+  if [ -n "${SUPABASE_APP_PROJECT_REF:-}" ] && [ "$SUPABASE_TEST_PROJECT_REF" = "$SUPABASE_APP_PROJECT_REF" ]; then
+    echo "ERROR: SUPABASE_TEST_PROJECT_REF equals SUPABASE_APP_PROJECT_REF." >&2
+    echo "       pgTAP must run against a SEPARATE scratch project, never the app project." >&2
+    exit 1
+  fi
+  if [ -n "${SUPABASE_DEV_PROJECT_REF:-}" ] && [ "$SUPABASE_TEST_PROJECT_REF" = "$SUPABASE_DEV_PROJECT_REF" ]; then
+    echo "ERROR: SUPABASE_TEST_PROJECT_REF equals the dev project ref from VITE_SUPABASE_URL ($SUPABASE_DEV_PROJECT_REF)." >&2
+    echo "       pgTAP must run against a SEPARATE scratch project, never the app project." >&2
+    exit 1
+  fi
 fi
 
 # --- Check the Supabase CLI is available ---
@@ -84,16 +110,25 @@ set -e
 echo "$OUTPUT_PKGS"
 
 # --- 3. pgTAP: scratch hosted project ---
-echo "Running pgTAP against scratch project $SUPABASE_TEST_PROJECT_REF..."
-set +e
-OUTPUT_PGTAP=$(supabase test db --remote="$SUPABASE_TEST_PROJECT_REF" --yes 2>&1)
-TEST_EXIT_PGTAP=$?
-set -e
-echo "$OUTPUT_PGTAP"
+if [ "$RUN_PGTAP" = "1" ]; then
+  echo "Running pgTAP against scratch project $SUPABASE_TEST_PROJECT_REF..."
+  set +e
+  OUTPUT_PGTAP=$(supabase test db --remote="$SUPABASE_TEST_PROJECT_REF" --yes 2>&1)
+  TEST_EXIT_PGTAP=$?
+  set -e
+  echo "$OUTPUT_PGTAP"
 
-if [ $TEST_EXIT_ROOT -ne 0 ] || [ $TEST_EXIT_PKGS -ne 0 ] || [ $TEST_EXIT_PGTAP -ne 0 ]; then
-  echo "FAIL: a test command exited non-zero (root=$TEST_EXIT_ROOT, pkgs=$TEST_EXIT_PKGS, pgtap=$TEST_EXIT_PGTAP)."
-  exit 1
+  if [ $TEST_EXIT_ROOT -ne 0 ] || [ $TEST_EXIT_PKGS -ne 0 ] || [ $TEST_EXIT_PGTAP -ne 0 ]; then
+    echo "FAIL: a test command exited non-zero (root=$TEST_EXIT_ROOT, pkgs=$TEST_EXIT_PKGS, pgtap=$TEST_EXIT_PGTAP)."
+    exit 1
+  fi
+
+  # --- Parse pgTAP TAP output: count ok/not ok lines ---
+  PGTAP_PASSED=$(echo "$OUTPUT_PGTAP" | grep -cE '^\s*ok\b' || true)
+  PGTAP_FAILED=$(echo "$OUTPUT_PGTAP" | grep -cE '^\s*not ok\b' || true)
+else
+  PGTAP_PASSED=0
+  PGTAP_FAILED=0
 fi
 
 # --- Aggregate vitest JSON results ---
@@ -123,15 +158,15 @@ TOTALS=$(RESULT_FILES="$RESULT_FILES" node -e "
 
 IFS='|' read -r PASSED PENDING TODO FAILED <<< "$TOTALS"
 
-# --- Parse pgTAP TAP output: count ok/not ok lines ---
-PGTAP_PASSED=$(echo "$OUTPUT_PGTAP" | grep -cE '^\s*ok\b' || true)
-PGTAP_FAILED=$(echo "$OUTPUT_PGTAP" | grep -cE '^\s*not ok\b' || true)
-
 TOTAL_PASSED=$((PASSED + PGTAP_PASSED))
 TOTAL_FAILED=$((FAILED + PGTAP_FAILED))
 
 echo "vitest passed: $PASSED (pending $PENDING, todo $TODO, failed $FAILED)"
-echo "pgTAP passed:  $PGTAP_PASSED (failed $PGTAP_FAILED)"
+if [ "$RUN_PGTAP" = "1" ]; then
+  echo "pgTAP passed:  $PGTAP_PASSED (failed $PGTAP_FAILED)"
+else
+  echo "pgTAP skipped: no SUPABASE_TEST_PROJECT_REF configured (local dev mode)"
+fi
 echo "Total passed: $TOTAL_PASSED (Baseline required: $BASELINE)"
 
 # Clean up report files so they do not pollute the tree.
