@@ -79,6 +79,17 @@ export interface Policy {
   status: PolicyStatus
 }
 
+export type PolicyRecord = {
+  id: string
+  name: string
+  description: string
+  max: number
+  daily: number
+  controls: boolean[]
+  assigned: string[]
+  status: 'Active' | 'Draft'
+}
+
 export interface PaymentRequest {
   id: string // Request reference e.g. "REQ-101" or invoice reference
   invoiceId: string
