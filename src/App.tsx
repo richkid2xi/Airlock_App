@@ -3,6 +3,7 @@ import { MockDataBadge } from './engines/MockDataBadge'
 import { invoiceEngine } from './engines/invoice'
 import { supplierEngine } from './engines/supplier'
 import { evaluationEngine, policyEngine } from './engines/evaluation'
+import { settlementEngine } from './engines/settlement'
 import { invoiceToRow, supplierToRow, invoiceFromRow, supplierFromRow, agentFromRow } from './domain/adapters'
 import { toMinorUnits } from './domain/money'
 
@@ -240,14 +241,14 @@ function Topbar({ page, toggleMenu, navigate }: { page: string; toggleMenu: () =
       <button className="search-trigger" onClick={()=>setOpen(open==='search'?null:'search')}><Icon name="search"/><span>Search</span><kbd>⌘ K</kbd></button>
       <button className="icon-btn" aria-label="Help" onClick={()=>setOpen(open==='help'?null:'help')}><Icon name="help"/></button>
       <button className="icon-btn notification" aria-label="Notifications" onClick={()=>setOpen(open==='notifications'?null:'notifications')}><Icon name="bell"/><i/></button>
-      <button className="wallet-profile" aria-label="Open connected wallet" onClick={()=>setOpen(open==='wallet'?null:'wallet')}><span className="wallet-identicon tiny">0x</span><span><b>0x71C4</b><small>Ethereum</small></span><Icon name="chevron" size={12}/></button>
+      <button className="wallet-profile" aria-label="Open connected wallet" onClick={()=>setOpen(open==='wallet'?null:'wallet')}><span className="wallet-identicon tiny">SOL</span><span><b>devnet</b><small>Solana · USDC</small></span><Icon name="chevron" size={12}/></button>
     </div>
     {open && <div className={`top-popover ${open}`}>
       {open==='search' && <><div className="popover-search"><Icon name="search"/><input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search workspaces…"/></div>{searchResults.length ? <div className="global-results">{searchResults.map(x=><button key={x} onClick={()=>{navigate(pageRoutes[x]);setOpen(null);setSearch('')}}><span>{x}</span><Icon name="arrow"/></button>)}</div> : <p>{search ? 'No matching workspace found.' : 'Search invoices, suppliers, activity, agents and settings.'}</p>}</>}
       {open==='org' && <><span className="popover-label">ACTIVE ORGANIZATION</span><button><span className="avatar org">N</span><span><b>Northstar Labs</b><small>Production</small></span><Icon name="check"/></button></>}
       {open==='help' && <><b>Airlock support</b><p>Invoice-bound requests are evaluated against supplier identity, amount, evidence and active policies before funds can move.</p><button className="btn secondary" onClick={()=>setOpen(null)}>Close help</button></>}
       {open==='notifications' && <><b>Notifications</b><div className="notice-item"><span className="event-symbol hold"><Icon name="clock"/></span><span><b>Payment awaiting review</b><small>INV-2045 · 2 hours ago</small></span></div><div className="notice-item"><span className="event-symbol block"><Icon name="lock"/></span><span><b>Payment blocked</b><small>INV-2042 · Yesterday</small></span></div></>}
-      {open==='wallet' && <><span className="popover-label">CONNECTED WALLET</span><div className="wallet-pop"><span className="wallet-identicon small">0x</span><span><b>0x71C4...9F2A</b><small>Ethereum · Owner</small></span></div></>}
+      {open==='wallet' && <><span className="popover-label">CONNECTED SOLANA CLUSTER</span><div className="wallet-pop"><span className="wallet-identicon small">SOL</span><span><b>devnet</b><small>Mint: 4zMMC9...ncDU · Circle USDC</small></span></div></>}
     </div>}
   </header>
 }
@@ -338,7 +339,7 @@ const invoiceRows = [
 ]
 
 function PageHeading({ title, description, action, actionIcon = 'plus', onAction }: { title: string; description: string; action?: string; actionIcon?: IconName; onAction?: () => void }) {
-  const engineBadge = title === 'Invoices' ? <MockDataBadge engine="invoice"/> : title === 'Suppliers' ? <MockDataBadge engine="supplier"/> : title === 'Payment policies' ? <MockDataBadge engine="policy"/> : title === 'Attack Lab' ? <MockDataBadge engine="evaluation"/> : null
+  const engineBadge = title === 'Invoices' ? <MockDataBadge engine="invoice"/> : title === 'Suppliers' ? <MockDataBadge engine="supplier"/> : title === 'Payment policies' ? <MockDataBadge engine="policy"/> : title === 'Attack Lab' ? <MockDataBadge engine="evaluation"/> : title === 'Approvals' ? <MockDataBadge engine="settlement"/> : null
   return <div className="content-heading"><div><h1>{title}{engineBadge}</h1><p>{description}</p></div>{action && <button className="btn primary" onClick={onAction}><Icon name={actionIcon}/>{action}</button>}</div>
 }
 
@@ -441,7 +442,28 @@ function ActivityPage({ approvals = false, rows, path, navigate, agents, onDecis
       </div>
       <aside className="detail-secondary"><section className="panel decision-card"><Status>{selected[4]}</Status><h2>{selected[4] === 'ALLOW' ? 'Payment allowed' : selected[4] === 'BLOCK' ? 'Payment blocked' : 'Human review required'}</h2><p>{reason}</p><div className="security-note"><Icon name="shield"/><span><b>Evaluation recorded</b><small>This result is retained even if policies later change.</small></span></div></section>{approvals && selected[4] === 'HOLD' && <section className="panel approval-actions-card"><h2>Make a decision</h2><p>Review the invoice and evidence before continuing.</p><button className="btn primary" onClick={() => setConfirm('ALLOW')}>Approve payment</button><button className="btn danger" onClick={() => setConfirm('BLOCK')}>Reject payment</button></section>}</aside>
     </div>
-    {confirm && <ConfirmDialog title={confirm === 'ALLOW' ? 'Approve this payment?' : 'Reject this payment?'} description={confirm === 'ALLOW' ? 'This prototype will mark the request as allowed. No blockchain transaction will be submitted.' : 'The request will be blocked and removed from the approval queue.'} confirmLabel={confirm === 'ALLOW' ? 'Approve request' : 'Reject request'} danger={confirm === 'BLOCK'} onCancel={() => setConfirm(null)} onConfirm={() => {onDecision(selected[0],confirm);notify(confirm === 'ALLOW' ? 'Payment request approved.' : 'Payment request rejected.');setConfirm(null);navigate('/app/approvals')}}/>}
+    {confirm && <ConfirmDialog title={confirm === 'ALLOW' ? 'Approve this payment?' : 'Reject this payment?'} description={confirm === 'ALLOW' ? 'Settlement will execute on Solana Devnet via USDC SPL token transfer.' : 'The request will be blocked on-chain and removed from the approval queue.'} confirmLabel={confirm === 'ALLOW' ? 'Approve request' : 'Reject request'} danger={confirm === 'BLOCK'} onCancel={() => setConfirm(null)} onConfirm={async () => {
+      if (confirm === 'ALLOW') {
+        try {
+          const receipt = await settlementEngine.executeSettlement({
+            requestId: selected[0],
+            invoiceNumber: selected[0],
+            supplierName: selected[1],
+            destinationWallet: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+            amountUnits: toMinorUnits(selected[3]),
+          })
+          notify(`Payment executed on Solana Devnet! Sig: ${receipt.signature.slice(0, 16)}…`)
+        } catch (err: any) {
+          notify(`Settlement error: ${err.message}`)
+        }
+      } else {
+        await settlementEngine.rejectHoldRequest(selected[0], '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU')
+        notify('Payment request rejected.')
+      }
+      onDecision(selected[0],confirm)
+      setConfirm(null)
+      navigate('/app/approvals')
+    }}/>}
   </>
   return <>
     <PageHeading title={approvals ? 'Approvals' : 'Payment activity'} description={approvals ? `${held.length} payment requests require a human decision.` : 'Inspect every AI-agent payment request and rule evaluation.'}/>
