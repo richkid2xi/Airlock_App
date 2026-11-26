@@ -1,0 +1,10 @@
+{
+  "description": "Protects business payments initiated by AI agents with invoice checks, supplier verification, spending policies, and human approvals for finance teams.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
