@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { MockDataBadge } from './engines/MockDataBadge'
+import { invoiceEngine } from './engines/invoice'
+import { supplierEngine } from './engines/supplier'
+import { invoiceToRow, supplierToRow } from './domain/adapters'
+import { toMinorUnits } from './domain/money'
 
 type IconName =
   | 'grid' | 'invoice' | 'users' | 'activity' | 'check' | 'bot' | 'shield'
@@ -332,7 +337,8 @@ const invoiceRows = [
 ]
 
 function PageHeading({ title, description, action, actionIcon = 'plus', onAction }: { title: string; description: string; action?: string; actionIcon?: IconName; onAction?: () => void }) {
-  return <div className="content-heading"><div><h1>{title}</h1><p>{description}</p></div>{action && <button className="btn primary" onClick={onAction}><Icon name={actionIcon}/>{action}</button>}</div>
+  const engineBadge = title === 'Invoices' ? <MockDataBadge engine="invoice"/> : title === 'Suppliers' ? <MockDataBadge engine="supplier"/> : null
+  return <div className="content-heading"><div><h1>{title}{engineBadge}</h1><p>{description}</p></div>{action && <button className="btn primary" onClick={onAction}><Icon name={actionIcon}/>{action}</button>}</div>
 }
 
 function EntityDetail({ type, row, onBack, onUpdate, notify, policies = [] }: { type: 'Invoices' | 'Suppliers' | 'AI Agents'; row: string[]; onBack: () => void; onUpdate: (row:string[]) => void; notify:(m:string)=>void; policies?:PolicyRecord[] }) {
@@ -626,6 +632,20 @@ function DashboardApp({ onLogout, path, navigate }: { onLogout: () => void; path
   const [suppliers, setSuppliers] = useSessionState<string[][]>('airlock-suppliers',[
     ['Amazon Web Services','0x88E1 •••• 41B2','Verified','34','May 12, 2025','Active'],['Vercel Inc.','0x20A7 •••• 9C3F','Verified','12','May 19, 2025','Active'],['Atlas Freight','0x712F •••• 88D0','Review required','8','Apr 28, 2025','Pending'],['Neon Systems','0x991C •••• 23A1','Unverified','3','Mar 14, 2025','Restricted'],['Linear Labs','0x4BA2 •••• 82EE','Verified','9','May 18, 2025','Active']
   ])
+
+  // Sync initial state from typed engines
+  useEffect(() => {
+    invoiceEngine.listInvoices().then(list => {
+      if (list && list.length) {
+        setInvoices(list.map(inv => invoiceToRow(inv, '€')))
+      }
+    })
+    supplierEngine.listSuppliers().then(list => {
+      if (list && list.length) {
+        setSuppliers(list.map(sup => supplierToRow(sup)))
+      }
+    })
+  }, [])
   const [agents, setAgents] = useSessionState<string[][]>('airlock-agents',[
     ['ProcureBot','agt_9x2p•••b71','Active','€25,000','€75,000','142'],['AP Assistant','agt_4m8q•••c20','Active','€15,000','€40,000','86'],['Ops Agent','agt_7k1r•••a93','Active','€10,000','€25,000','41'],['Research Agent','agt_2d6v•••e04','Disabled','€2,500','€5,000','12']
   ])
@@ -641,16 +661,40 @@ function DashboardApp({ onLogout, path, navigate }: { onLogout: () => void; path
   ])
   const page = path.startsWith('/app/invoices') ? 'Invoices' : path.startsWith('/app/suppliers') ? 'Suppliers' : path.startsWith('/app/agents') ? 'AI Agents' : path.startsWith('/app/policies') ? 'Policies' : path.startsWith('/app/activity') ? 'Activity' : path.startsWith('/app/approvals') ? 'Approvals' : path.startsWith('/app/attack-lab') ? 'Attack Lab' : path.startsWith('/app/settings') ? 'Settings' : 'Dashboard'
   const created = (type: 'invoice' | 'supplier' | 'agent', row: string[]) => {
-    if (type === 'invoice') setInvoices([row,...invoices])
-    if (type === 'supplier') setSuppliers([row,...suppliers])
+    if (type === 'invoice') {
+      setInvoices([row,...invoices])
+      invoiceEngine.createInvoice({
+        number: row[0],
+        supplierName: row[1],
+        amountUnits: toMinorUnits(row[2]),
+        issueDate: row[3],
+        dueDate: row[4],
+      }).catch(console.error)
+    }
+    if (type === 'supplier') {
+      setSuppliers([row,...suppliers])
+      supplierEngine.createSupplier({
+        name: row[0],
+        payoutWallet: row[1],
+      }).catch(console.error)
+    }
     if (type === 'agent') setAgents([row,...agents])
     setModal(null)
     setToast({message: type === 'invoice' ? 'Invoice registered successfully.' : type === 'supplier' ? 'Supplier added successfully.' : 'Agent authorized successfully.'})
   }
   let content: ReactNode
   if (page === 'Dashboard') content = <Dashboard setPage={p => navigate(pageRoutes[p])} activityRows={activityRows} invoiceData={invoices} approvalCount={activityRows.filter(x => x[4] === 'HOLD').length} onOpenActivity={id => navigate(`/app/activity/${encodeURIComponent(id)}`)}/>
-  else if (page === 'Invoices') content = <DataWorkspace type="Invoices" rows={invoices} path={path} navigate={navigate} onCreate={() => setModal('invoice')} onUpdate={row=>setInvoices(invoices.map(x=>x[0]===row[0]?row:x))} notify={message=>setToast({message})}/>
-  else if (page === 'Suppliers') content = <DataWorkspace type="Suppliers" rows={suppliers} path={path} navigate={navigate} onCreate={() => setModal('supplier')} onUpdate={row=>setSuppliers(suppliers.map(x=>x[0]===row[0]?row:x))} notify={message=>setToast({message})}/>
+  else if (page === 'Invoices') content = <DataWorkspace type="Invoices" rows={invoices} path={path} navigate={navigate} onCreate={() => setModal('invoice')} onUpdate={row=>{
+    setInvoices(invoices.map(x=>x[0]===row[0]?row:x))
+    invoiceEngine.updateInvoiceStatus(row[0], row[5] as any).catch(console.error)
+  }} notify={message=>setToast({message})}/>
+  else if (page === 'Suppliers') content = <DataWorkspace type="Suppliers" rows={suppliers} path={path} navigate={navigate} onCreate={() => setModal('supplier')} onUpdate={row=>{
+    setSuppliers(suppliers.map(x=>x[0]===row[0]?row:x))
+    if (row[2] === 'Verified') {
+      supplierEngine.verifySupplier(row[0]).catch(console.error)
+    }
+    supplierEngine.updatePayoutWallet(row[0], row[1]).catch(console.error)
+  }} notify={message=>setToast({message})}/>
   else if (page === 'AI Agents') content = <DataWorkspace type="AI Agents" rows={agents} path={path} navigate={navigate} onCreate={() => setModal('agent')} onUpdate={row=>setAgents(agents.map(x=>x[0]===row[0]?row:x))} notify={message=>setToast({message})} policies={policies}/>
   else if (page === 'Activity') content = <ActivityPage rows={activityRows} path={path} navigate={navigate} agents={agents} onDecision={(id,decision) => setActivityRows(activityRows.map(x => x[0] === id ? x.map((v,i) => i === 4 ? decision : v) : x))} notify={message => setToast({message})}/>
   else if (page === 'Approvals') content = <ActivityPage approvals rows={activityRows} path={path} navigate={navigate} agents={agents} onDecision={(id,decision) => setActivityRows(activityRows.map(x => x[0] === id ? x.map((v,i) => i === 4 ? decision : v) : x))} notify={message => setToast({message})}/>
