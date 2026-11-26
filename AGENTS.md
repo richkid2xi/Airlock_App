@@ -43,6 +43,55 @@ Tailwind emits utility classes in `@layer utilities`, and CSS outside any cascad
 3. **Honest fallback.** A live engine call that fails on transport/RPC errors falls back to mock only when `VITE_ALLOW_MOCK_FALLBACK=true`, marks the engine `degraded`, and surfaces a "Mock data" badge. Never present mock as live.
 4. **Typed domain.** Core entities (`Invoice`, `Supplier`, `Agent`, `Policy`, `PaymentRequest`, `Evaluation`, `Approval`) and enums live in the domain layer; the canonical copy is `packages/shared`.
 5. **Minor units.** Monetary amounts are integer minor units (USDC = 6 decimals) as strings/`bigint`. Never floats in domain logic; format only at the display edge.
-6. **Solana rules.** Solana addresses are base58 strings. Before writing any Solana/Anchor code, read the repo-root `SOLANA.md`; its rules are authoritative and override EVM habits.
-7. **Test first.** Define golden vectors in `packages/golden` before writing the logic they test. Never delete, comment out, or skip tests — `scripts/test.sh` fails if the count drops.
-8. **Honest result.** Correctness first, optimize only against measured benchmarks. Never "test toward passing".
+
+6. **Solana rules.** Before ANY Solana/Anchor/Rust code, or off-chain logic mirroring on-chain limits, read the repo-root `SOLANA.md` in full. It overrides EVM instincts: no re-entrancy guards, no SafeMath wrappers, no partial-state handling, no re-zeroing accounts. Validate owners, signers, writable flags, PDAs, mints, delegates, sizes, discriminators explicitly in every instruction. Defaults: devnet (env-driven, shown in UI), @solana/wallet-adapter-react, @solana/web3.js v1, Anchor, USDC SPL (verify the devnet mint against Circle docs, not memory).
+
+7. **Test first.** Define golden vectors in `packages/golden` before writing the logic they test. Never delete, comment out, or skip tests — `scripts/test.sh` fails if the count drops below `.test-baseline`. Implement intended behaviour; tests verify it. Never write code just to make tests pass.
+
+8. **Two layers.** Hard caps (per-tx, daily) and destination/program allowlists are enforced ONCE in the on-chain program. The off-chain evaluator is a second layer for UX and early rejection, never the only layer. A compromised engine must never be able to exceed on-chain limits. Never implement in client/server code a limit only the program can truly enforce.
+
+9. **CU.** Every instruction/call path gets a LiteSVM benchmark recorded in `docs/cu-budget.md`. Correctness first, optimize only against benchmarks.
+
+10. **Review claims.** When any AI review claims a vulnerability, verify it is exploitable on Solana (SOLANA.md runtime model) before changing code. Report the verification.
+
+11. **Supabase.** Structure `supabase/migrations`, `supabase/functions` (Deno Edge Functions), `supabase/tests` (pgTAP), `supabase/seed.sql`. Client uses supabase-js with the anon key ONLY. Service-role key exists only inside Edge Functions' built-in env, never in client code, `.env.example` values or logs. Every table has RLS enabled from its first migration with policies tying rows to the signed-in user's organization.
+
+12. **Shared logic.** zod schemas, minor-unit helpers and (later) the evaluator live in `packages/shared` and are imported by web, Edge Functions (import map) and tests. Never copy-paste logic between client and functions.
+
+13. **Honest result.** Correctness first, optimize only against measured benchmarks. Never "test toward passing".
+
+## Keep these existing rules
+
+- **UI frozen.** Teammate polishes visuals in parallel. Only wire data and add loading/error/empty states, reusing existing classes.
+- **Engine pattern.** `src/engines/<name>/{types,mock,live,index}.ts` + registry + `withFallback` + `MockBadge` + Settings "Engine status" list.
+- **Honest fallback.** A live engine call that fails on transport/RPC errors falls back to mock only when `VITE_ALLOW_MOCK_FALLBACK=true`, marks the engine `degraded`, and surfaces a "Mock data" badge. Never present mock as live. **401/403 and RLS denials NEVER fall back to mock.**
+
+## Testing
+
+- Golden vectors live in `packages/golden` (JSON + typed loader + JSON schema) and are written BEFORE the logic they test.
+- `scripts/test.sh` runs vitest (JSON reporter) and `supabase test db`, sums passed tests, compares to `.test-baseline`, exits non-zero if lower or if anything is skipped/todo, raises the baseline when the count grows.
+
+## Monorepo skeleton
+
+- Web app stays at repo root; do NOT move `src/`.
+- `packages/shared/` — zod schemas + domain types + minor-unit helpers. Canonical domain copy. Web imports from here.
+- `packages/golden/` — golden vectors as JSON + typed loader + JSON schema.
+- `supabase/` — migrations, functions, tests (pgTAP), seed.
+- `programs/` — README placeholder (Anchor workspace later).
+- `scripts/test.sh` — vitest + supabase test db aggregation against `.test-baseline`.
+
+## Supabase
+
+- Backend is Supabase (Postgres + RLS + Auth + Edge Functions + Realtime). No custom Express server. `/server` is retired.
+- Hosted Supabase decision made for this repo. Use placeholder env values in `.env.example`; real values go in `.env.local` (never committed, never paste service-role key into chat).
+
+## Secrets handling
+
+- Client uses supabase-js with the anon key ONLY.
+- Service-role key exists only inside Edge Functions' built-in env, never in client code, `.env.example` values or logs.
+
+## Small steps
+
+- Small steps, no red builds, stop and ask instead of inventing values.
+
+(End of file - total 58 lines)
