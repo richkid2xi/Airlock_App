@@ -1,5 +1,4 @@
 import { OnboardingPort, OnboardingState } from './types'
-import { engineRegistry } from '../registry'
 
 const STORAGE_KEY = 'airlock-onboarding'
 
@@ -9,23 +8,42 @@ const STORAGE_KEY = 'airlock-onboarding'
  * VITE_ENGINE_ONBOARDING=mock.
  */
 class MockOnboardingEngine implements OnboardingPort {
-  private state: OnboardingState = { draft: {}, completed: false }
-
-  async get(): Promise<OnboardingState> {
-    // Original behaviour: fresh in-memory state per mount
-    return { draft: {}, completed: false }
+  private read(): OnboardingState {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY)
+      if (raw) return JSON.parse(raw)
+    } catch {
+      // ignore parse errors, return fresh state
+    }
+    return { draft: {}, completed: false, step: 0 }
   }
 
-  async saveStep(_step: number, data: Record<string, unknown>): Promise<void> {
-    // Mock behaviour: onboarding values are discarded locally
+  private write(state: OnboardingState): void {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    } catch {
+      // ignore quota exceeded
+    }
+  }
+
+  async get(): Promise<OnboardingState> {
+    return this.read()
+  }
+
+  async saveStep(step: number, data: Record<string, unknown>): Promise<void> {
+    const current = this.read()
+    const draft = { ...current.draft, ...data, onboarding_step: Math.max(current.step ?? 0, step) }
+    const nextStep = Math.max(current.step ?? 0, step)
+    this.write({ draft, completed: current.completed, step: nextStep })
     return Promise.resolve()
   }
 
   async complete(): Promise<void> {
-    // Mock behaviour: completion only drives local navigation
+    const current = this.read()
+    this.write({ ...current, completed: true })
     return Promise.resolve()
   }
 }
 
 export const mockOnboardingEngine = new MockOnboardingEngine()
-export { engineRegistry }
+export { engineRegistry } from '../registry'

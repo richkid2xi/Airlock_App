@@ -1,14 +1,167 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '../ui/Icon'
 import { Logo } from '../ui/Logo'
 import { Status } from '../ui/Status'
+import { onboardingEngine } from '../engines/onboarding'
+import { OnboardingStep1Schema, OnboardingStep2Schema } from '@airlock/shared'
 
 const steps = ['Connect wallet', 'Organization', 'Payment setup', 'Security', 'Complete']
+
+type Draft = {
+  organizationName: string
+  businessEmail: string
+  industry: string
+  size: string
+  maxInvoiceAmount: string
+  approvalThreshold: string
+}
+
+type FieldErrors = {
+  organizationName?: string
+  businessEmail?: string
+  maxInvoiceAmount?: string
+  approvalThreshold?: string
+}
+
+const EMPTY_DRAFT: Draft = {
+  organizationName: '',
+  businessEmail: '',
+  industry: '',
+  size: '',
+  maxInvoiceAmount: '',
+  approvalThreshold: '',
+}
+
+const AUTOSAVE_DEBOUNCE_MS = 800
+
+function clusterLabel(): string {
+  const cluster = (import.meta as any).env?.VITE_SOLANA_CLUSTER
+  return typeof cluster === 'string' && cluster.length > 0 ? cluster : 'devnet'
+}
+
+function validateStep1(draft: Draft): FieldErrors {
+  const result = OnboardingStep1Schema.safeParse({
+    organizationName: draft.organizationName,
+    businessEmail: draft.businessEmail,
+    industry: draft.industry || undefined,
+    size: draft.size || undefined,
+  })
+  if (result.success) return {}
+  const f = result.error.flatten().fieldErrors
+  return {
+    organizationName: f.organizationName?.[0],
+    businessEmail: f.businessEmail?.[0],
+  }
+}
+
+function validateStep2(draft: Draft): FieldErrors {
+  const result = OnboardingStep2Schema.safeParse({
+    approvalThreshold: draft.approvalThreshold,
+    maxInvoiceAmount: draft.maxInvoiceAmount,
+  })
+  if (result.success) return {}
+  const f = result.error.flatten().fieldErrors
+  return {
+    maxInvoiceAmount: f.maxInvoiceAmount?.[0],
+    approvalThreshold: f.approvalThreshold?.[0],
+  }
+}
 
 export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onComplete: () => void; startAt?: number; onWalletConnected?: () => void }) {
   const [step, setStep] = useState(startAt)
   const [walletConnected, setWalletConnected] = useState(startAt > 0)
   const [connecting, setConnecting] = useState(false)
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [maxSavedStep, setMaxSavedStep] = useState(startAt)
+  const [completeState, setCompleteState] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [completeError, setCompleteError] = useState<string | null>(null)
+  const autosaveTimer = useRef<number | null>(null)
+
+  const cluster = clusterLabel()
+
+  // Resume from saved draft/step on mount.
+  useEffect(() => {
+    let cancelled = false
+    onboardingEngine.get().then((state) => {
+      if (cancelled) return
+      const saved = state.draft as Partial<Draft> | undefined
+      if (saved && Object.keys(saved).length > 0) {
+        setDraft((d) => ({ ...d, ...saved }))
+        setMaxSavedStep(typeof state.step === 'number' ? state.step : 0)
+        if (startAt >= 1 && typeof state.step === 'number' && state.step > startAt) {
+          setStep(state.step)
+        }
+      }
+    }).catch(() => {
+      // resume is best-effort; ignore engine errors
+    })
+    return () => {
+      cancelled = true
+      if (autosaveTimer.current !== null) window.clearTimeout(autosaveTimer.current)
+    }
+  }, [])
+
+  // Autosave: debounce 800ms on draft change.
+  useEffect(() => {
+    if (autosaveTimer.current !== null) window.clearTimeout(autosaveTimer.current)
+    autosaveTimer.current = window.setTimeout(() => {
+      onboardingEngine.saveStep(step, draft as unknown as Record<string, unknown>).catch(() => {})
+    }, AUTOSAVE_DEBOUNCE_MS)
+    return () => {
+      if (autosaveTimer.current !== null) window.clearTimeout(autosaveTimer.current)
+    }
+  }, [draft, step])
+
+  const updateDraft = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
+
+  const saveNow = async (targetStep: number) => {
+    try {
+      await onboardingEngine.saveStep(targetStep, draft as unknown as Record<string, unknown>)
+      setMaxSavedStep((m) => Math.max(m, targetStep))
+    } catch {
+      // save failures are surfaced via engine status, not blocking navigation
+    }
+  }
+
+  const onBlurField = (field: keyof Draft) => {
+    if (field === 'organizationName' || field === 'businessEmail') {
+      const e = validateStep1(draft)
+      setErrors((prev) => ({ ...prev, organizationName: e.organizationName, businessEmail: e.businessEmail }))
+    }
+    if (field === 'maxInvoiceAmount' || field === 'approvalThreshold') {
+      const e = validateStep2(draft)
+      setErrors((prev) => ({ ...prev, maxInvoiceAmount: e.maxInvoiceAmount, approvalThreshold: e.approvalThreshold }))
+    }
+  }
+
+  const goNext = async () => {
+    if (step === 1) {
+      const e = validateStep1(draft)
+      setErrors(e)
+      if (e.organizationName || e.businessEmail) return
+    }
+    if (step === 2) {
+      const e = validateStep2(draft)
+      setErrors(e)
+      if (e.maxInvoiceAmount || e.approvalThreshold) return
+    }
+    if (step === 4) {
+      setCompleteState('loading')
+      setCompleteError(null)
+      try {
+        await onboardingEngine.complete()
+        onComplete()
+      } catch (err) {
+        setCompleteState('error')
+        setCompleteError(err instanceof Error ? err.message : 'Failed to complete onboarding')
+      }
+      return
+    }
+    await saveNow(step)
+    setStep(step + 1)
+  }
+
   const connectWallet = () => {
     setConnecting(true)
     window.setTimeout(() => {
@@ -16,9 +169,8 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
       setWalletConnected(true)
     }, 650)
   }
-  const next = () => step === 4 ? onComplete() : setStep(step + 1)
 
-  const content = [
+  const content: ReactNode[] = [
     <div className="wallet-entry" key="wallet-entry">
       <div className="eyebrow"><span className="pulse-dot"/> Wallet-secured access</div>
       <h1>Connect your wallet<br/>to enter Airlock.</h1>
@@ -36,7 +188,7 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
           <div><span className="connection-status"><i/> Wallet connected</span><b>0x71C4...9F2A</b><small>Ethereum · Network verified</small></div>
           <button className="btn quiet" onClick={() => setWalletConnected(false)}>Disconnect</button>
         </div>
-        <button className="btn primary wallet-continue" onClick={() => { onWalletConnected?.(); next() }}>Continue with this wallet <Icon name="arrow"/></button>
+        <button className="btn primary wallet-continue" onClick={() => { onWalletConnected?.(); goNext() }}>Continue with this wallet <Icon name="arrow"/></button>
       </>}
     </div>,
     <div className="form-content" key="org">
@@ -44,10 +196,10 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
       <h2>Tell us about your organization</h2>
       <p className="lead">This helps us configure your payment environment and reporting.</p>
       <div className="form-grid">
-        <label className="field full">Organization name<input defaultValue="Northstar Labs" placeholder="Legal business name"/></label>
-        <label className="field full">Business email<input defaultValue="finance@northstarlabs.com" type="email"/></label>
-        <label className="field">Industry<select defaultValue="Software"><option>Software</option><option>Financial services</option><option>Professional services</option><option>Retail</option></select></label>
-        <label className="field">Organization size<select defaultValue="51–200"><option>1–10</option><option>11–50</option><option>51–200</option><option>201–1,000</option></select></label>
+        <label className={`field full${errors.organizationName ? ' invalid' : ''}`}>Organization name<input value={draft.organizationName} onChange={(e) => updateDraft({ organizationName: e.target.value })} onBlur={() => onBlurField('organizationName')} placeholder="Legal business name"/>{errors.organizationName && <span className="field-error">{errors.organizationName}</span>}</label>
+        <label className={`field full${errors.businessEmail ? ' invalid' : ''}`}>Business email<input value={draft.businessEmail} onChange={(e) => updateDraft({ businessEmail: e.target.value })} onBlur={() => onBlurField('businessEmail')} type="email"/>{errors.businessEmail && <span className="field-error">{errors.businessEmail}</span>}</label>
+        <label className="field">Industry<select value={draft.industry} onChange={(e) => updateDraft({ industry: e.target.value })}><option value="">Select…</option><option>Software</option><option>Financial services</option><option>Professional services</option><option>Retail</option></select></label>
+        <label className="field">Organization size<select value={draft.size} onChange={(e) => updateDraft({ size: e.target.value })}><option value="">Select…</option><option>1–10</option><option>11–50</option><option>51–200</option><option>201–1,000</option></select></label>
       </div>
     </div>,
     <div className="form-content" key="payment">
@@ -55,10 +207,10 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
       <h2>Configure your payment environment</h2>
       <p className="lead">Set the default network and boundaries Airlock will enforce across agent-initiated requests.</p>
       <div className="form-grid">
-        <label className="field">Settlement network<select defaultValue="Ethereum"><option>Ethereum</option><option>Base</option><option>Polygon</option><option>Arbitrum</option></select></label>
-        <label className="field">Reporting currency<select defaultValue="EUR"><option>EUR — Euro</option><option>USD — US Dollar</option><option>GBP — Pound Sterling</option></select></label>
-        <label className="field">Maximum invoice amount<div className="input-prefix"><span>€</span><input defaultValue="50,000"/></div><span className="field-note">Requests above this amount will be blocked.</span></label>
-        <label className="field">Human approval threshold<div className="input-prefix"><span>€</span><input defaultValue="10,000"/></div><span className="field-note">Requests above this amount will be held.</span></label>
+        <label className="field">Settlement network<div className="input-prefix"><span className="input-static">Solana · {cluster}</span></div><span className="field-note">Read-only · Solana network</span></label>
+        <label className="field">Reporting currency<div className="input-prefix"><span className="input-static">USDC</span></div><span className="field-note">Asset · USDC (6 decimals)</span></label>
+        <label className={`field${errors.maxInvoiceAmount ? ' invalid' : ''}`}>Maximum invoice amount<div className="input-prefix"><span>$</span><input value={draft.maxInvoiceAmount} onChange={(e) => updateDraft({ maxInvoiceAmount: e.target.value })} onBlur={() => onBlurField('maxInvoiceAmount')} inputMode="decimal"/></div><span className="field-note">Requests above this amount will be blocked.</span>{errors.maxInvoiceAmount && <span className="field-error">{errors.maxInvoiceAmount}</span>}</label>
+        <label className={`field${errors.approvalThreshold ? ' invalid' : ''}`}>Human approval threshold<div className="input-prefix"><span>$</span><input value={draft.approvalThreshold} onChange={(e) => updateDraft({ approvalThreshold: e.target.value })} onBlur={() => onBlurField('approvalThreshold')} inputMode="decimal"/></div><span className="field-note">Requests above this amount will be held.</span>{errors.approvalThreshold && <span className="field-error">{errors.approvalThreshold}</span>}</label>
       </div>
       <div className="connected-strip">
         <div className="wallet-identicon small">0x</div><div><b>Organization wallet</b><small>0x71C4...9F2A</small></div><Status>Connected</Status>
@@ -82,11 +234,18 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
       <div className="complete-mark"><Icon name="check" size={28}/></div>
       <div className="step-kicker">Setup complete</div>
       <h2>Your payment environment is ready.</h2>
-      <p className="lead">Northstar Labs is protected by Airlock. You can now register invoices, verify suppliers and authorize AI agents.</p>
+      <p className="lead">{draft.organizationName || 'Your organization'} is protected by Airlock. You can now register invoices, verify suppliers and authorize AI agents.</p>
       <div className="summary-box">
-        {['Wallet identity verified · 0x71C4...9F2A','Organization profile configured','Payment boundaries established','Default protections enabled'].map(x => <div key={x}><Icon name="check" size={15}/><span>{x}</span></div>)}
+        {[
+          `Wallet identity verified · 0x71C4...9F2A`,
+          `Organization · ${draft.organizationName || '—'} · ${draft.businessEmail || '—'}`,
+          `Settlement · Solana (${cluster}) · USDC`,
+          `Max invoice · ${draft.maxInvoiceAmount || '—'} · Threshold · ${draft.approvalThreshold || '—'}`,
+        ].map(x => <div key={x}><Icon name="check" size={15}/><span>{x}</span></div>)}
       </div>
-    </div>
+      {completeState === 'error' && <div className="field-error" role="alert">{completeError}</div>}
+      {completeState === 'loading' && <div className="field-note">Completing…</div>}
+    </div>,
   ]
 
   return <main className="onboarding">
@@ -95,7 +254,7 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
       <section className="onboarding-main">
         <div className="progress-mobile">Step {step + 1} of 5 <span><i style={{width: `${(step + 1) / 5 * 100}%`}}/></span></div>
         <div className="onboarding-content">{content[step]}</div>
-        {step > 0 && <div className="form-actions"><button className="btn quiet" onClick={() => setStep(step - 1)}>Back</button><button className="btn primary" onClick={next}>{step === 4 ? 'Go to dashboard' : 'Continue'} <Icon name="arrow"/></button></div>}
+        {step > 0 && <div className="form-actions"><button className="btn quiet" onClick={() => setStep(step - 1)}>Back</button><button className="btn primary" onClick={goNext} disabled={step === 4 && completeState === 'loading'}>{step === 4 ? (completeState === 'loading' ? 'Completing…' : 'Go to dashboard') : 'Continue'} <Icon name="arrow"/></button></div>}
       </section>
       <aside className="onboarding-aside">
         <div className="aside-art" aria-hidden="true">
@@ -106,7 +265,7 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
           <div className="flow-card approved-flow"><span className="status-symbol"><Icon name="check" size={15}/></span><span><b>Payment allowed</b><small>Bound to approved invoice</small></span></div>
         </div>
         <div className="progress-steps">
-          {steps.map((s, i) => <button key={s} disabled={i > step} className={`${i === step ? 'active' : ''} ${i < step ? 'done' : ''}`} onClick={() => setStep(i)}><span>{i < step ? <Icon name="check" size={13}/> : i + 1}</span><div><b>{s}</b><small>{i === step ? 'In progress' : i < step ? 'Complete' : 'Upcoming'}</small></div></button>)}
+          {steps.map((s, i) => <button key={s} disabled={i > maxSavedStep} className={`${i === step ? 'active' : ''} ${i < step ? 'done' : ''}`} onClick={() => setStep(i)}><span>{i < step ? <Icon name="check" size={13}/> : i + 1}</span><div><b>{s}</b><small>{i === step ? 'In progress' : i < step ? 'Complete' : 'Upcoming'}</small></div></button>)}
         </div>
         <p className="aside-trust"><Icon name="shield" size={15}/> Non-custodial access · Your keys stay in your wallet</p>
       </aside>

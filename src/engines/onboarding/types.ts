@@ -6,10 +6,11 @@
 export type OnboardingState = {
   draft: Record<string, unknown>;
   completed: boolean;
+  step?: number;
 }
 
 export interface OnboardingPort {
-  /** Fetch the onboarding draft + completion flag. */
+  /** Fetch the onboarding draft + completion flag + current step. */
   get(): Promise<OnboardingState>;
   /** Persist one validated onboarding step. */
   saveStep(step: number, data: Record<string, unknown>): Promise<void>;

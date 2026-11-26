@@ -18,10 +18,10 @@ export const OnboardingStep1Schema = z.object({
     .string()
     .trim()
     .min(1, 'Organization name is required')
-    .refine(
-      (val) => /^[\p{L}\p{N}\s\-&().,:;'\"_@]+$/u.test(val),
-      'Organization name contains invalid characters',
-    ),
+.refine(
+        (val) => /^[\p{L}\p{N}\s\-&().,:;'"_@]+$/u.test(val),
+        'Organization name contains invalid characters',
+      ),
   businessEmail: z
     .string()
     .trim()
