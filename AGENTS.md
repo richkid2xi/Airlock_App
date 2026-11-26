@@ -85,6 +85,17 @@ Tailwind emits utility classes in `@layer utilities`, and CSS outside any cascad
 - Backend is Supabase (Postgres + RLS + Auth + Edge Functions + Realtime). No custom Express server. `/server` is retired.
 - Hosted Supabase decision made for this repo. Use placeholder env values in `.env.example`; real values go in `.env.local` (never committed, never paste service-role key into chat).
 
+## Supabase CLI (v3.4.0) — critical flags
+
+- CLI is installed via `npx supabase` (v3.4.0). Verify with `npx supabase --version`.
+- **Default behavior**: `supabase <command>` runs against the **Local Docker stack**. For any hosted project you MUST pass `--remote`.
+- `supabase db push --remote=<ref>` — push to a specific hosted project by ref (e.g. `--remote=tjzavfhghbjxchohkimo`).
+- `supabase test db --remote=<ref>` — run pgTAP against a hosted project; `--remote` (no value) = linked project, `--remote=<ref|branch|url>` = specific target.
+- **Always** pass `--yes` when targeting a remote with `test db` / `db push` (prompts disabled).
+- Local Docker stack is NOT run in this environment; always use `--remote` for hosted projects.
+- Full CLI flag reference: `npx supabase <command> --help`.
+- Details and rationale: `docs/supabase-cli.md`.
+
 ## Secrets handling
 
 - Client uses supabase-js with the anon key ONLY.
