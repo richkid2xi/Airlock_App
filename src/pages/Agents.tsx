@@ -107,7 +107,6 @@ export function Agents({ notify }: { notify: (m: string) => void }) {
     <div className="panel">
       <div className="panel-head"><div><h2>Agent directory</h2><p>{agents?.length ?? 0} agents</p></div></div>
       <div style={{ padding: '16px 18px 18px' }}>
-        {agents && agents.length === 0 && <div style={{ color: '#6b7280', fontSize: 14, padding: 20, textAlign: 'center' }}>No agents yet. Add your first agent.</div>}
         <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
           <thead>
             <tr>
@@ -132,6 +131,7 @@ export function Agents({ notify }: { notify: (m: string) => void }) {
                 </td>
               </tr>
             ))}
+            {(!agents || agents.length === 0) && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No agents yet. Add your first agent.</td></tr>}
           </tbody>
         </table>
       </div>

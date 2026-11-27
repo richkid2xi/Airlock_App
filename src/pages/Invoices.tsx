@@ -108,7 +108,6 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
     <div className="panel">
       <div className="panel-head"><div><h2>Invoice register</h2><p>{invoices?.length ?? 0} invoices</p></div></div>
       <div style={{ padding: '16px 18px 18px' }}>
-        {invoices && invoices.length === 0 && <div style={{ color: '#6b7280', fontSize: 14, padding: 20, textAlign: 'center' }}>No invoices yet. Register your first invoice.</div>}
         <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
           <thead>
             <tr>
@@ -138,6 +137,7 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
                 </tr>
               )
             })}
+            {(!invoices || invoices.length === 0) && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No invoices yet. Register your first invoice.</td></tr>}
           </tbody>
         </table>
       </div>

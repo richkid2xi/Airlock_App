@@ -89,7 +89,6 @@ export function Suppliers({ notify }: { notify: (m: string) => void }) {
     <div className="panel">
       <div className="panel-head"><div><h2>Supplier directory</h2><p>{suppliers?.length ?? 0} registered suppliers</p></div></div>
       <div style={{ padding: '16px 18px 18px' }}>
-        {suppliers && suppliers.length === 0 && <div style={{ color: '#6b7280', fontSize: 14, padding: 20, textAlign: 'center' }}>No suppliers yet. Add your first supplier to get started.</div>}
         <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
           <thead>
             <tr>
@@ -113,6 +112,7 @@ export function Suppliers({ notify }: { notify: (m: string) => void }) {
                 </td>
               </tr>
             ))}
+            {(!suppliers || suppliers.length === 0) && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No suppliers yet. Add your first supplier to get started.</td></tr>}
           </tbody>
         </table>
       </div>
