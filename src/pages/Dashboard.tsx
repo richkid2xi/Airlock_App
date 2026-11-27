@@ -2,6 +2,29 @@ import { useState } from 'react'
 import { Icon } from '../ui/Icon'
 import { Status } from '../ui/Status'
 import { Metric } from '../ui/Metric'
+import { InProgress } from '../ui/InProgress'
+
+type DueInvoice = {
+  invoiceNumber: string
+  supplierName: string
+  amountMinor: string
+  currency: string
+  dueDate: string
+  status: string
+}
+
+type MetricsSummary = {
+  totalInvoices: number
+  paidCount: number
+  openCount: number
+  dueSoon: DueInvoice[]
+}
+
+type DashboardMetrics = {
+  loading: boolean
+  error: string | null
+  data: MetricsSummary | null
+}
 
 export function TransactionTable({ rows, onOpen }: { rows?: string[][]; onOpen?: (id: string) => void }) {
   if (!rows || rows.length === 0) {
@@ -13,25 +36,25 @@ export function TransactionTable({ rows, onOpen }: { rows?: string[][]; onOpen?:
   </table></div>
 }
 
-export function Dashboard({ setPage, activityRows = [], invoiceData = [], approvalCount = 0, onOpenActivity }: { setPage: (p: string) => void; activityRows?: string[][]; invoiceData?: string[][]; approvalCount?: number; onOpenActivity?: (id:string) => void }) {
+export function Dashboard({ setPage, metrics }: { setPage: (p: string) => void; metrics?: DashboardMetrics }) {
   const [query, setQuery] = useState('')
   const [decision, setDecision] = useState<'All' | 'ALLOW' | 'BLOCK' | 'HOLD'>('All')
   const decisions: Array<'All' | 'ALLOW' | 'BLOCK' | 'HOLD'> = ['All', 'ALLOW', 'BLOCK', 'HOLD']
-  const q = query.toLowerCase()
-  const recent = activityRows
-    .filter(x => (q.length === 0 || x.some(c => c.toLowerCase().includes(q))) && (decision === 'All' || x[4] === decision))
-    .slice(0, 5)
-  const paidCount = invoiceData.filter(x => x[5] === 'Paid').length
-  const dueSoon = invoiceData.filter(x => x[5] !== 'Paid').slice(0, 3)
-  const events = activityRows.filter(x => x[4] === 'BLOCK' || x[4] === 'HOLD').slice(0, 3)
+  const metricsData = metrics?.data ?? null
+  const metricsLoading = metrics?.loading ?? false
+
+  const paidCount = metricsData?.paidCount ?? 0
+  const openCount = metricsData?.openCount ?? 0
+  const totalInvoices = metricsData?.totalInvoices ?? 0
+  const dueSoon = metricsData?.dueSoon ?? []
 
   return <>
     <div className="welcome-row"><div><div className="date-label"></div><h1>Dashboard</h1><p>Here's what's happening across your payment environment.</p></div><button className="btn secondary" onClick={() => setPage('/app/attack-lab')}><Icon name="flask"/> Run security test</button></div>
     <div className="metrics-grid">
-      <Metric icon="shield" label="Funds protected" value="--" note="Blocked or held" />
-      <Metric icon="invoice" label="Invoices paid" value={String(paidCount)} note={`${invoiceData.length} registered invoices`} accent="green"/>
-      <Metric icon="lock" label="Blocked payments" value="0" note="In the last 30 days" accent="red"/>
-      <Metric icon="clock" label="Awaiting review" value={String(approvalCount)} note={approvalCount ? 'Human decision required' : 'No requests need review'} accent="amber"/>
+      <Metric icon="shield" label="Funds protected" value="0" note="Blocked or held by policy" />
+      <Metric icon="invoice" label="Invoices paid" value={metricsLoading ? '--' : String(paidCount)} note={metricsLoading ? 'Loading…' : `${paidCount} of ${totalInvoices} registered invoices`} accent="green"/>
+      <Metric icon="lock" label="Blocked payments" value="0" note="In the last 30 days" accent="red" />
+      <Metric icon="clock" label="Awaiting review" value={metricsLoading ? '--' : String(openCount)} note={metricsLoading ? 'Loading…' : 'Human decision required'} accent="amber"/>
     </div>
     <div className="dashboard-grid">
       <section className="panel activity-panel">
@@ -46,7 +69,9 @@ export function Dashboard({ setPage, activityRows = [], invoiceData = [], approv
             {decisions.map(d => <button key={d} className={decision === d ? 'active' : ''} onClick={() => setDecision(d)}>{d}</button>)}
           </div>
         </div>
-        {recent.length > 0 ? <TransactionTable rows={recent} onOpen={onOpenActivity}/> : <div className="empty-state table-empty"><Icon name="search" /><b>No matching activity</b><p>Try a different search or decision filter.</p></div>}
+        {metricsLoading ? (
+          <div className="empty-state"><Icon name="search" /><b>Loading activity</b><p>Fetching latest payment requests…</p></div>
+        ) : <InProgress module="requests" title="Payment requests" whatWillDo={['Activity will appear once the payment requests engine is live']} />}
       </section>
       <section className="panel security-panel">
         <div className="panel-head"><div><h2>Payment security</h2><p>Last 30 days</p></div></div>
@@ -60,13 +85,20 @@ export function Dashboard({ setPage, activityRows = [], invoiceData = [], approv
       <section className="panel compact-panel">
         <div className="panel-head"><div><h2>Invoices due soon</h2><p>Next 14 days</p></div><button className="text-action" onClick={() => setPage('/app/invoices')}>View invoices</button></div>
         <div className="due-list">
-          {dueSoon.length > 0 ? dueSoon.map(x => <div key={x[0]}><span className="doc-icon"><Icon name="invoice"/></span><span><b>{x[0]} · {x[1]}</b><small>Due {x[4]}</small></span><strong>{x[2]}</strong><Status>{x[5]}</Status></div>) : <div className="empty-state"><Icon name="invoice"/><b>No invoices due</b><p>Upcoming invoices will appear here.</p></div>}
+          {dueSoon.length > 0 ? dueSoon.map(x => (
+            <div key={x.invoiceNumber}>
+              <span className="doc-icon"><Icon name="invoice"/></span>
+              <span><b>{x.invoiceNumber} · {x.supplierName}</b><small>Due {x.dueDate}</small></span>
+              <strong>{x.amountMinor} {x.currency}</strong>
+              <Status>{x.status}</Status>
+            </div>
+          )) : <div className="empty-state"><Icon name="invoice"/><b>No invoices due</b><p>Upcoming invoices will appear here.</p></div>}
         </div>
       </section>
       <section className="panel compact-panel events-panel">
         <div className="panel-head"><div><h2>Security events</h2><p>Recent policy interventions</p></div><button className="text-action" onClick={() => setPage('/app/activity')}>View log</button></div>
         <div className="events-list">
-          {events.length > 0 ? events.map((x, i) => <div key={i}><span className={`event-symbol ${x[4] === 'HOLD' ? 'hold' : 'block'}`}><Icon name={x[4] === 'HOLD' ? 'clock' : 'lock'} size={15}/></span><span><b>{x[0]} · {x[1]}</b><small>{x[2]}</small></span></div>) : <div className="empty-state"><Icon name="shield"/><b>No security events</b><p>Policy interventions will appear here.</p></div>}
+          <div className="empty-state"><Icon name="shield"/><b>No security events</b><p>Policy interventions will appear here once the requests engine is live.</p></div>
         </div>
       </section>
     </div>
