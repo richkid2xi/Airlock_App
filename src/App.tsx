@@ -26,7 +26,7 @@ export default function App() {
             <Route path="/" element={<ConnectRoute />} />
             <Route path="/connect" element={<ConnectRoute />} />
             <Route path="/onboarding" element={<OnboardingRoute />} />
-            <Route path="/checkpoint" element={<CheckpointPage />} />
+            {import.meta.env.DEV && <Route path="/checkpoint" element={<CheckpointPage />} />}
             <Route path="/app/*" element={<AppShellRoute />} />
             <Route path="*" element={<GlobalNotFound />} />
           </Routes>

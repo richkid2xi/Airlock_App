@@ -1,12 +1,37 @@
-import { resolveEngine } from '../registry'
+import type { OnboardingPort, OnboardingState } from './types'
+import { engineRegistry } from '../registry'
 import { mockOnboardingEngine } from './mock'
+import { LiveOnboardingEngine } from './live'
+import { withPolicyFallback } from '../fallbackPolicy'
 
-/**
- * Resolve the onboarding engine per VITE_ENGINE_ONBOARDING.
- * Defaults to mock when env is not 'live'. Live engine (src/engines/onboarding/live.ts)
- * is wired in Phase 2D; until then the mock is returned unchanged so the UI
- * needs zero changes when live is plugged in later.
- */
-export const onboardingEngine = resolveEngine('onboarding', mockOnboardingEngine, mockOnboardingEngine)
+export class OnboardingEngineProxy implements OnboardingPort {
+  private live: LiveOnboardingEngine | null = null
 
+  private getLive(): LiveOnboardingEngine {
+    return this.live ?? (this.live = new LiveOnboardingEngine())
+  }
+
+  async get(): Promise<OnboardingState> {
+    return await withPolicyFallback('onboarding',
+      async () => this.getLive().get(),
+      async () => mockOnboardingEngine.get()
+    )
+  }
+
+  async saveStep(step: number, data: Record<string, unknown>): Promise<void> {
+    return await withPolicyFallback('onboarding',
+      async () => this.getLive().saveStep(step, data),
+      async () => mockOnboardingEngine.saveStep(step, data)
+    )
+  }
+
+  async complete(): Promise<void> {
+    return await withPolicyFallback('onboarding',
+      async () => this.getLive().complete(),
+      async () => mockOnboardingEngine.complete()
+    )
+  }
+}
+
+export const onboardingEngine: OnboardingPort = new OnboardingEngineProxy()
 export type { OnboardingPort, OnboardingState } from './types'

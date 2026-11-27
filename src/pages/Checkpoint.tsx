@@ -19,7 +19,7 @@ export function CheckpointPage() {
     setLog((prev) => [...prev, message])
   }
 
-  async function run() {
+  async function connectWallet(name: string) {
     setBusy(true)
     setErrorText(null)
     setIdentities(null)
@@ -28,23 +28,21 @@ export function CheckpointPage() {
       const detected = wallets.map((w) => `${w.adapter.name} (readyState=${w.readyState})`)
       append(`Detected wallets: ${detected.length ? detected.join(', ') : 'none'}`)
 
-      const phantom = wallets.find((w) => w.adapter.name.toLowerCase() === 'phantom')
-      if (!phantom) {
-        append('Phantom not detected')
+      const entry = wallets.find((w) => w.adapter.name === name)
+      if (!entry) {
+        append(`Wallet ${name} not found`)
         return
       }
-      append(`Found Phantom: ${phantom.adapter.name} (readyState=${phantom.readyState})`)
-
-      append(`Selecting ${phantom.adapter.name}`)
-      select(phantom.adapter.name)
+      append(`Selected wallet: ${entry.adapter.name} (readyState=${entry.readyState})`)
+      select(entry.adapter.name)
 
       append('Waiting for wallet to be set...')
       const start = Date.now()
       while (!walletRef.current && Date.now() - start < 5000) {
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
-      if (!walletRef.current) throw new Error('Wallet was not set after selecting Phantom')
-      const adapter = phantom.adapter
+      if (!walletRef.current) throw new Error(`Wallet ${name} was not set after selecting`)
+      const adapter = entry.adapter
       append(`Wallet set: ${adapter.name}`)
 
       if (!adapter.connected) {
@@ -86,7 +84,7 @@ export function CheckpointPage() {
 
   return (
     <div style={{ padding: 20, fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-      <h1>Checkpoint: Phantom signInWithWeb3 (scratch)</h1>
+      <h1>Checkpoint: wallet signInWithWeb3 (dev only)</h1>
 
       <div>
         <p>Selected wallet: {wallet ? `${wallet.adapter.name} (readyState=${wallet.readyState})` : 'none'}</p>
@@ -100,16 +98,17 @@ export function CheckpointPage() {
           <p> none</p>
         ) : (
           wallets.map((w) => (
-            <p key={w.adapter.name}>
-              - {w.adapter.name} (readyState={w.readyState})
-            </p>
+            <div key={w.adapter.name} style={{ marginBottom: 6 }}>
+              <button onClick={() => connectWallet(w.adapter.name)} disabled={busy}>
+                {busy ? 'Working...' : `Connect ${w.adapter.name}`}
+              </button>
+              <span style={{ marginLeft: 8 }}>
+                readyState={w.readyState}
+              </span>
+            </div>
           ))
         )}
       </div>
-
-      <button onClick={run} disabled={busy}>
-        {busy ? 'Working...' : 'Connect + signInWithWeb3'}
-      </button>
 
       <div style={{ marginTop: 12 }}>
         <p>Log:</p>
