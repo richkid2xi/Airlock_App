@@ -7,6 +7,8 @@
  * USDC_DECIMALS = 6 so "0.1" => 100000n, "1,000.50" => 100005000n.
  */
 
+import { z } from 'zod'
+
 export class MinorUnitsError extends Error {
   readonly code: string
   constructor(code: string, message: string) {
@@ -61,4 +63,18 @@ export function bigIntToDecimalString(minorUnits: bigint): string {
 /** Parse an amount string, returning the raw string and the parsed minor units. */
 export function parseAmountString(decimalString: string): { raw: string; minorUnits: bigint } {
   return { raw: decimalString, minorUnits: decimalStringToBigInt(decimalString) }
+}
+
+export const minorUnitsSchema = z.string().regex(/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/, {
+  message: 'amount must be a positive integer minor-unit string (max 6 decimals)',
+})
+
+/** Convert a minor-unit string to a bigint. */
+export function parseMinorUnits(units: string): bigint {
+  return decimalStringToBigInt(units)
+}
+
+/** Format a bigint minor unit back to a comma-separated decimal string. */
+export function formatMinorUnits(units: bigint): string {
+  return bigIntToDecimalString(units)
 }
