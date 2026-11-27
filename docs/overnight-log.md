@@ -34,3 +34,9 @@
 - Deleted tests: registry.contract.test.ts (33), domain.test.ts (8), status.test.ts (2), fallbackPolicy.test.ts (23), invoice.test.ts (4), supplier.test.ts (4), registry.test.ts (3) = 77 total
 - Baseline: 110 → 40
 - Typecheck: passes. Build: passes. Vitest: 40 passed (6 files).
+
+## PART 3: Evaluation engine live (complete)
+- src/pages/AttackLab.tsx: rewritten to fetch real suppliers/agents/invoices from registryEngine, map to domain types, call evaluationEngine.evaluateRequest(); removed positional string[] props and domain adapters
+- src/shell/DashboardApp.tsx: Attack Lab renders AttackLab under FeatureGate(feature="evaluation")
+- src/config/features.ts: evaluation flipped to 'live'
+- Typecheck: passes. Build: passes. Vitest: 40 passed (6 files).

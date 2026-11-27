@@ -20,7 +20,7 @@ export const FEATURES: Record<FeatureName, FeatureState> = {
   auth: 'live',
   onboarding: 'live',
   registry: 'live',
-  evaluation: 'in_progress',
+  evaluation: 'live',
   requests: 'in_progress',
   approvals: 'in_progress',
   chain: 'in_progress',

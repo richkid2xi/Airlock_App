@@ -13,6 +13,7 @@ import { registryEngine } from '../engines/registry'
 import { Suppliers } from '../pages/Suppliers'
 import { Invoices } from '../pages/Invoices'
 import { Agents } from '../pages/Agents'
+import { AttackLab } from '../pages/AttackLab'
 
 function shorten(address: string | null): string {
   if (!address) return '—'
@@ -79,7 +80,7 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
   else if (page === 'AI Agents') content = <FeatureGate feature="registry"><Agents notify={message => setToast({ message })} /></FeatureGate>
   else if (page === 'Policies' || page === 'Activity') content = <FeatureGate feature="requests" />
   else if (page === 'Approvals') content = <FeatureGate feature="approvals" />
-  else if (page === 'Attack Lab') content = <FeatureGate feature="evaluation" />
+  else if (page === 'Attack Lab') content = <FeatureGate feature="evaluation"><AttackLab notify={message => setToast({ message })} /></FeatureGate>
   else content = <SettingsPage notify={message => setToast({ message })} onLogout={onLogout} />
 
   return (
