@@ -27,7 +27,6 @@ export function Sidebar({ page, navigate, open, close, approvalCount = 0 }: { pa
       <div className="side-brand"><Logo/><button className="icon-btn side-close" onClick={close}><Icon name="close"/></button></div>
       <nav>{nav.map(section => <div className="nav-section" key={section.group}><div className="nav-label">{section.group}</div>{section.items.map(([label, icon]) => <button key={label} onClick={() => {navigate(pageRoutes[label]); close()}} className={page === label ? 'active' : ''}><Icon name={icon as IconName}/><span>{label}</span>{label === 'Approvals' && approvalCount > 0 && <em>{approvalCount}</em>}</button>)}</div>)}</nav>
       <div className="sidebar-footer">
-        <div className="environment"><span><i/> Protection active</span><small>All systems operational</small></div>
         <button className="profile-card" onClick={()=>navigate('/app/settings')}><span className="wallet-identicon tiny">SOL</span><span><b>devnet</b><small>Owner wallet</small></span><Icon name="chevron"/></button>
       </div>
     </aside>

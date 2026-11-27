@@ -1,13 +1,36 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Icon } from '../ui/Icon'
 import { pageRoutes } from './Sidebar'
 
 export function Topbar({ page, toggleMenu, navigate, onLogout }: { page: string; toggleMenu: () => void; navigate: (p: string) => void; onLogout?: () => void }) {
-  const [open, setOpen] = useState<'search' | 'help' | 'notifications' | 'wallet' | null>(null)
+  const [open, setOpen] = useState<'search' | 'notifications' | null>(null)
   const [search, setSearch] = useState('')
+  const notifications: string[] = []
+  const popoverRef = useRef<HTMLDivElement>(null)
+
   const searchResults = Object.keys(pageRoutes)
-    .filter((x) => x.toLowerCase().includes(search.toLowerCase()) && search)
+    .filter((x) => search.length > 0 && x.toLowerCase().includes(search.toLowerCase()))
     .slice(0, 5)
+
+  // Outside click to close
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setOpen(null)
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  // Escape key to close
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(null)
+    }
+    if (open) document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [open])
 
   return (
     <header className="topbar">
@@ -24,24 +47,18 @@ export function Topbar({ page, toggleMenu, navigate, onLogout }: { page: string;
           <Icon name="search" />
           <span>Search</span>
         </button>
-        <button className="icon-btn" aria-label="Help" onClick={() => setOpen('help')}>
-          <Icon name="help" />
-        </button>
-        <button className="icon-btn notification" aria-label="Notifications" onClick={() => setOpen('notifications')}>
+        <button className="icon-btn notification" aria-label="Notifications" onClick={() => setOpen(open === 'notifications' ? null : 'notifications')}>
           <Icon name="bell" />
-          <i />
+          {notifications.length > 0 && <i />}
         </button>
-        <button className="wallet-profile" aria-label="Open connected wallet" onClick={() => setOpen('wallet')}>
-          <span className="wallet-identicon tiny">SOL</span>
-          <span>
-            <b>devnet</b>
-            <small>Solana · USDC</small>
-          </span>
-          <Icon name="chevron" size={12} />
-        </button>
+        {onLogout && (
+          <button className="icon-btn logout-btn" title="Log out" aria-label="Log out" onClick={onLogout}>
+            <Icon name="logout" />
+          </button>
+        )}
       </div>
-      {open && (
-        <div className={`top-popover ${open}`}>
+      {open != null && (
+        <div ref={popoverRef} className={`top-popover ${open}`}>
           {open === 'search' && (
             <div className="popover-search">
               <Icon name="search" />
@@ -58,35 +75,26 @@ export function Topbar({ page, toggleMenu, navigate, onLogout }: { page: string;
               )}
             </div>
           )}
-          {open === 'help' && (
-            <>
-              <b>Airlock support</b>
-              <p>Invoice-bound requests are evaluated against supplier identity, amount, evidence and active policies before funds can move.</p>
-              <button className="btn secondary" onClick={() => setOpen(null)}>Close</button>
-            </>
-          )}
           {open === 'notifications' && (
-            <>
-              <b>Notifications</b>
-              <p>No new notifications.</p>
-            </>
-          )}
-          {open === 'wallet' && (
-            <>
-              <span className="popover-label">CONNECTED SOLANA CLUSTER</span>
-              <div className="wallet-pop">
-                <span className="wallet-identicon small">SOL</span>
-                <span>
-                  <b>devnet</b>
-                  <small>Mint: — · Circle USDC</small>
-                </span>
+            <div className="notification-panel">
+              <div className="notification-header">
+                <span className="popover-label">NOTIFICATIONS</span>
+                {notifications.length > 0 && <button className="text-action mark-read">Mark all as read</button>}
               </div>
-              {onLogout && (
-                <div className="wallet-disconnect">
-                  <button className="btn secondary" onClick={() => { setOpen(null); onLogout() }}>Disconnect wallet</button>
+              {notifications.length > 0 ? (
+                <ul>
+                  {notifications.map((n, i) => (
+                    <li key={i} style={{ fontSize: 12, lineHeight: 1.4, paddingBottom: 6 }}>
+                      {n}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="empty-state">
+                  <Icon name="bell" /> No new notifications
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       )}
