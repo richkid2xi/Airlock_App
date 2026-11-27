@@ -75,7 +75,6 @@ export function Connect({ onComplete }: { onComplete: () => void }) {
       <div className="connect-card">
         <Logo />
         <h1>Connect your wallet</h1>
-        <p>Your wallet is your secure identity. Airlock will request a signature to verify ownership—no transaction or gas fee is required.</p>
         <div className="wallet-list">
           {wallets.length === 0 && <p style={{ fontSize: 14, color: '#6b7280' }}>No wallets detected. Install a Solana wallet and refresh.</p>}
           {wallets.map((w) => {
@@ -98,9 +97,7 @@ export function Connect({ onComplete }: { onComplete: () => void }) {
             )
           })}
         </div>
-        <div className="wallet-safety">
-          <Icon name="shield" /><span><b>Signature only</b><small>Airlock can’t access your funds or move assets by connecting.</small></span>
-        </div>
+        <p className="connect-disclosure">Airlock only requests a signature to confirm your identity. It cannot access or move your funds.</p>
       </div>
     </main>
   )
