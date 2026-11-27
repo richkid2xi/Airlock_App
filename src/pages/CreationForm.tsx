@@ -64,6 +64,6 @@ export function CreationForm({ type, suppliers, invoices, onCancel, onSubmit, on
         <label className="field">Assigned policy<select name="policy"><option>Standard payment controls</option><option>High-value review</option><option>Supplier restricted</option></select></label>
       </>}
     </div>
-    <div className="modal-actions"><button type="button" className="btn secondary" onClick={onCancel}>Cancel</button><button className="btn primary" type="submit">{type === 'invoice' ? 'Register invoice' : type === 'supplier' ? 'Add supplier' : 'Authorize agent'}</button></div>
+    <div className="modal-actions"><button type="button" className="btn secondary" onClick={onCancel}>Cancel</button><button className="btn primary fit" type="submit">{type === 'invoice' ? 'Register invoice' : type === 'supplier' ? 'Add supplier' : 'Authorize agent'}</button></div>
   </form>
 }

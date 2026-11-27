@@ -3,13 +3,13 @@ import { Sidebar, pageRoutes } from './Sidebar'
 import { Topbar } from './Topbar'
 import { Toast } from '../ui/Toast'
 import { Dashboard } from '../pages/Dashboard'
-import { authEngine } from '../engines/auth'
-import { onboardingEngine } from '../engines/onboarding'
-import { Suppliers } from '../pages/Suppliers'
 import { Invoices } from '../pages/Invoices'
+import { Suppliers } from '../pages/Suppliers'
 import { Agents } from '../pages/Agents'
 import { AttackLab } from '../pages/AttackLab'
+import { Policies } from '../pages/Policies'
 import { SettingsPage } from '../pages/SettingsPage'
+import { ActivityPage } from '../pages/ActivityPage'
 
 export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => void; path: string; navigate: (p: string) => void }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -22,9 +22,9 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
   else if (page === 'Suppliers') content = <Suppliers notify={message => setToast({ message })} />
   else if (page === 'Invoices') content = <Invoices notify={message => setToast({ message })} />
   else if (page === 'AI Agents') content = <Agents notify={message => setToast({ message })} />
-  else if (page === 'Policies') content = <Suppliers notify={message => setToast({ message })} />
-  else if (page === 'Activity') content = <Suppliers notify={message => setToast({ message })} />
-  else if (page === 'Approvals') content = <Suppliers notify={message => setToast({ message })} />
+  else if (page === 'Policies') content = <Policies policies={[]} setPolicies={() => {}} agents={[]} path={path} navigate={navigate} notify={message => setToast({ message })} />
+  else if (page === 'Activity') content = <ActivityPage approvals={false} rows={[]} path={path} navigate={navigate} agents={[]} onDecision={() => {}} notify={message => setToast({ message })} />
+  else if (page === 'Approvals') content = <ActivityPage approvals={true} rows={[]} path={path} navigate={navigate} agents={[]} onDecision={() => {}} notify={message => setToast({ message })} />
   else if (page === 'Attack Lab') content = <AttackLab notify={message => setToast({ message })} />
   else content = <SettingsPage notify={message => setToast({ message })} onLogout={onLogout} />
 
@@ -33,7 +33,7 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
       <Sidebar page={page} navigate={navigate} open={menuOpen} close={() => setMenuOpen(false)} approvalCount={0} />
       <div className="app-main">
         <Topbar page={page} navigate={navigate} toggleMenu={() => setMenuOpen(true)} onLogout={onLogout} />
-        <main className="content">{content}</main>
+        <main className="content scrollbar-none">{content}</main>
       </div>
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
     </div>
