@@ -289,6 +289,16 @@ function validateAgentLimits(perRequestLimitMinor: string, dailyLimitMinor: stri
   if (dl < pr) throw { code: 'validation', message: 'dailyLimitMinor must be >= perRequestLimitMinor' }
 }
 
+function normalizeControls(c?: Partial<Policy['controls']>): Policy['controls'] {
+  return {
+    requireVerifiedSupplier: c?.requireVerifiedSupplier ?? false,
+    requireDeliveryAttestation: c?.requireDeliveryAttestation ?? false,
+    requireAgentIntent: c?.requireAgentIntent ?? false,
+    requireSupportingEvidence: c?.requireSupportingEvidence ?? false,
+    requireTwoPersonApproval: c?.requireTwoPersonApproval ?? false,
+  }
+}
+
 function validatePolicyLimits(maxInvoiceMinor: string, dailyCapMinor: string) {
   const max = BigInt(maxInvoiceMinor)
   const daily = BigInt(dailyCapMinor)
@@ -449,7 +459,7 @@ const policyEngine: RegistryEnginePort['policies'] = {
       description: input.description ?? null,
       maxInvoiceMinor: input.maxInvoiceMinor,
       dailyCapMinor: input.dailyCapMinor,
-      controls: input.controls,
+      controls: normalizeControls(input.controls),
       status: input.status ?? 'active',
       createdAt: now,
       updatedAt: now,
@@ -462,7 +472,14 @@ const policyEngine: RegistryEnginePort['policies'] = {
     const idx = policies.findIndex((p) => p.id === id)
     if (idx === -1) throw { code: 'not_found', message: 'Policy not found' }
     const existing = policies[idx]
-    const merged: Policy = { ...existing, ...patch, controls: { ...existing.controls, ...patch.controls }, updatedAt: new Date().toISOString() }
+    const mergedControls = {
+      requireVerifiedSupplier: patch.controls?.requireVerifiedSupplier ?? existing.controls.requireVerifiedSupplier,
+      requireDeliveryAttestation: patch.controls?.requireDeliveryAttestation ?? existing.controls.requireDeliveryAttestation,
+      requireAgentIntent: patch.controls?.requireAgentIntent ?? existing.controls.requireAgentIntent,
+      requireSupportingEvidence: patch.controls?.requireSupportingEvidence ?? existing.controls.requireSupportingEvidence,
+      requireTwoPersonApproval: patch.controls?.requireTwoPersonApproval ?? existing.controls.requireTwoPersonApproval,
+    }
+    const merged: Policy = { ...existing, ...patch, controls: mergedControls, updatedAt: new Date().toISOString() }
     validatePolicyLimits(merged.maxInvoiceMinor, merged.dailyCapMinor)
     policies[idx] = merged
     return merged
