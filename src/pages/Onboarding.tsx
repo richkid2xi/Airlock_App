@@ -206,17 +206,11 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
     <div className="form-content" key="payment">
       <h2>Configure your payment environment</h2>
       <p className="lead">Set the default network and boundaries Airlock will enforce across agent-initiated requests.</p>
+      <div className="payment-readonly">
+        <div>Settlement network: <b>Solana · {cluster}</b> <span className="muted">Read-only · Solana network</span></div>
+        <div>Reporting currency: <b>USDC</b> <span className="muted">Asset · USDC (6 decimals)</span></div>
+      </div>
       <div className="form-grid">
-        <label className="field">
-          Settlement network
-          <div className="input-prefix"><span className="input-static">Solana · {cluster}</span></div>
-          <span className="field-note">Read-only · Solana network</span>
-        </label>
-        <label className="field">
-          Reporting currency
-          <div className="input-prefix"><span className="input-static">USDC</span></div>
-          <span className="field-note">Asset · USDC (6 decimals)</span>
-        </label>
         <label className={`field${errors.maxInvoiceAmount ? ' invalid' : ''}`}>
           Maximum invoice amount
           <div className="input-prefix"><span>$</span><input value={draft.maxInvoiceAmount} onChange={(e) => updateDraft({ maxInvoiceAmount: e.target.value })} onBlur={() => onBlurField('maxInvoiceAmount')} inputMode="decimal" /></div>
@@ -229,11 +223,6 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
           <span className="field-note">Requests above this amount will be held.</span>
           {errors.approvalThreshold && <span className="field-error">{errors.approvalThreshold}</span>}
         </label>
-      </div>
-      <div className="connected-strip">
-        <div className="wallet-identicon small">0x</div>
-        <div><b>Organization wallet</b><small>—</small></div>
-        <Status>Connected</Status>
       </div>
     </div>,
     <div className="form-content" key="security">
@@ -286,10 +275,10 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
     <main className="onboarding">
       <div className="onboarding-card">
         <div className="onboarding-header">
-          <div className="onboarding-header-left">
-            <Logo compact />
-            <div className="step-label"><span className="step-number">Step {step + 1} of 4</span><span className="step-name">{steps[step]}</span></div>
+          <div className="onboarding-brand">
+            <Logo />
           </div>
+          <div className="step-label"><span className="step-number">Step {step + 1} of 4</span><span className="step-name">{steps[step]}</span></div>
         </div>
         <div className="onboarding-body">
           {content[step]}
