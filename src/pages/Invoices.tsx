@@ -108,38 +108,40 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
     <div className="panel">
       <div className="panel-head"><div><h2>Invoice register</h2><p>{invoices?.length ?? 0} invoices</p></div></div>
       <div style={{ padding: '16px 18px 18px' }}>
-        <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Invoice #</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Supplier</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Amount</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Due</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Status</th>
-              <th style={{ textAlign: 'right', padding: 8, fontSize: 12, color: '#6b7280' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoices?.map((i: Invoice) => {
-              const sup = suppliers?.find((s: Supplier) => s.id === i.supplierId)
-              return (
-                <tr key={i.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: 10, fontSize: 14 }}><b>{i.invoiceNumber}</b></td>
-                  <td style={{ padding: 10, fontSize: 14 }}>{sup?.name || '—'}</td>
-                  <td style={{ padding: 10, fontSize: 14 }}>{formatMinor(i.amountMinor, i.currency)} {i.currency}</td>
-                  <td style={{ padding: 10, fontSize: 14 }}>{i.dueDate}</td>
-                  <td style={{ padding: 10, fontSize: 14 }}><Status>{i.status}</Status></td>
-                  <td style={{ padding: 10, textAlign: 'right' }}>
-                    {i.status === 'open' && <button className="btn primary" style={{ fontSize: 11, padding: '3px 8px', marginRight: 4 }} onClick={() => handleAction(i.id, 'attest')}>Attest</button>}
-                    {i.status === 'open' && <button className="btn secondary" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => handleAction(i.id, 'dispute')}>Dispute</button>}
-                    {i.status !== 'open' && <span style={{ fontSize: 11, color: '#6b7280' }}>{i.status}</span>}
-                  </td>
-                </tr>
-              )
-            })}
-            {(!invoices || invoices.length === 0) && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No invoices yet. Register your first invoice.</td></tr>}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Invoice #</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Supplier</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Amount</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Due</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Status</th>
+                <th style={{ textAlign: 'right', padding: 8, fontSize: 12, color: '#6b7280' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoices?.map((i: Invoice) => {
+                const sup = suppliers?.find((s: Supplier) => s.id === i.supplierId)
+                return (
+                  <tr key={i.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: 10, fontSize: 14 }}><b>{i.invoiceNumber}</b></td>
+                    <td style={{ padding: 10, fontSize: 14 }}>{sup?.name || '—'}</td>
+                    <td style={{ padding: 10, fontSize: 14 }}>{formatMinor(i.amountMinor, i.currency)} {i.currency}</td>
+                    <td style={{ padding: 10, fontSize: 14 }}>{i.dueDate}</td>
+                    <td style={{ padding: 10, fontSize: 14 }}><Status>{i.status}</Status></td>
+                    <td style={{ padding: 10, textAlign: 'right' }}>
+                      {i.status === 'open' && <button className="btn primary" style={{ fontSize: 11, padding: '3px 8px', marginRight: 4 }} onClick={() => handleAction(i.id, 'attest')}>Attest</button>}
+                      {i.status === 'open' && <button className="btn secondary" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => handleAction(i.id, 'dispute')}>Dispute</button>}
+                      {i.status !== 'open' && <span style={{ fontSize: 11, color: '#6b7280' }}>{i.status}</span>}
+                    </td>
+                  </tr>
+                )
+              })}
+              {(!invoices || invoices.length === 0) && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No invoices yet. Register your first invoice.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     {open && <Modal title="Register invoice" description="Create a new invoice record linked to a verified supplier. Amounts are in minor units (e.g. USDC = 6 decimals)." onClose={() => setOpen(false)}>

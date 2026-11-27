@@ -107,33 +107,35 @@ export function Agents({ notify }: { notify: (m: string) => void }) {
     <div className="panel">
       <div className="panel-head"><div><h2>Agent directory</h2><p>{agents?.length ?? 0} agents</p></div></div>
       <div style={{ padding: '16px 18px 18px' }}>
-        <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Name</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Identifier</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Limits</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Status</th>
-              <th style={{ textAlign: 'right', padding: 8, fontSize: 12, color: '#6b7280' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {agents?.map((a: Agent) => (
-              <tr key={a.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                <td style={{ padding: 10, fontSize: 14 }}><b>{a.name}</b><br/><span style={{ fontSize: 12, color: '#6b7280' }}>{a.description || '—'}</span></td>
-                <td style={{ padding: 10, fontSize: 14 }}><code style={{ fontSize: 11 }}>{a.identifier}</code></td>
-                <td style={{ padding: 10, fontSize: 14 }}>{formatMinor(a.perRequestLimitMinor, a.currency)} per req · {formatMinor(a.dailyLimitMinor, a.currency)} daily</td>
-                <td style={{ padding: 10, fontSize: 14 }}><Status>{a.status}</Status></td>
-                <td style={{ padding: 10, textAlign: 'right' }}>
-                  <button className="btn primary" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => handleSetStatus(a.id, a.status === 'active' ? 'disabled' : 'active')}>
-                    {a.status === 'active' ? 'Disable' : 'Enable'}
-                  </button>
-                </td>
+        <div className="table-scroll">
+          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Name</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Identifier</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Limits</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Status</th>
+                <th style={{ textAlign: 'right', padding: 8, fontSize: 12, color: '#6b7280' }}>Actions</th>
               </tr>
-            ))}
-            {(!agents || agents.length === 0) && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No agents yet. Add your first agent.</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {agents?.map((a: Agent) => (
+                <tr key={a.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: 10, fontSize: 14 }}><b>{a.name}</b><br/><span style={{ fontSize: 12, color: '#6b7280' }}>{a.description || '—'}</span></td>
+                  <td style={{ padding: 10, fontSize: 14 }}><code style={{ fontSize: 11 }}>{a.identifier}</code></td>
+                  <td style={{ padding: 10, fontSize: 14 }}>{formatMinor(a.perRequestLimitMinor, a.currency)} per req · {formatMinor(a.dailyLimitMinor, a.currency)} daily</td>
+                  <td style={{ padding: 10, fontSize: 14 }}><Status>{a.status}</Status></td>
+                  <td style={{ padding: 10, textAlign: 'right' }}>
+                    <button className="btn primary" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => handleSetStatus(a.id, a.status === 'active' ? 'disabled' : 'active')}>
+                      {a.status === 'active' ? 'Disable' : 'Enable'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {(!agents || agents.length === 0) && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No agents yet. Add your first agent.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     {open && <Modal title="Create AI agent" description="Set spending limits and assign payment policies. Limits are in minor units (USDC = 6 decimals)." onClose={() => setOpen(false)}>

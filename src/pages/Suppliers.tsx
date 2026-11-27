@@ -89,32 +89,34 @@ export function Suppliers({ notify }: { notify: (m: string) => void }) {
     <div className="panel">
       <div className="panel-head"><div><h2>Supplier directory</h2><p>{suppliers?.length ?? 0} registered suppliers</p></div></div>
       <div style={{ padding: '16px 18px 18px' }}>
-        <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Name</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Category</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Payout wallet</th>
-              <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Verification</th>
-              <th style={{ textAlign: 'right', padding: 8, fontSize: 12, color: '#6b7280' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {suppliers?.map((s: Supplier) => (
-              <tr key={s.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                <td style={{ padding: 10, fontSize: 14 }}><b>{s.name}</b><br/><span style={{ fontSize: 12, color: '#6b7280' }}>{s.businessEmail || '—'}</span></td>
-                <td style={{ padding: 10, fontSize: 14 }}>{s.category || '—'}</td>
-                <td style={{ padding: 10, fontSize: 14 }}><code style={{ fontSize: 11, color: '#6b7280' }}>{s.payoutWallet.slice(0, 6)}…{s.payoutWallet.slice(-4)}</code></td>
-                <td style={{ padding: 10, fontSize: 14 }}><Status>{s.verificationStatus}</Status></td>
-                <td style={{ padding: 10, textAlign: 'right' }}>
-                  {s.verificationStatus === 'unverified' && <button className="btn primary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => handleVerify(s.id)}>Verify</button>}
-                  {s.verificationStatus !== 'unverified' && <button className="btn secondary" style={{ fontSize: 12, padding: '4px 10px' }} disabled>Verified</button>}
-                </td>
+        <div className="table-scroll">
+          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Name</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Category</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Payout wallet</th>
+                <th style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#6b7280' }}>Verification</th>
+                <th style={{ textAlign: 'right', padding: 8, fontSize: 12, color: '#6b7280' }}>Actions</th>
               </tr>
-            ))}
-            {(!suppliers || suppliers.length === 0) && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No suppliers yet. Add your first supplier to get started.</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {suppliers?.map((s: Supplier) => (
+                <tr key={s.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: 10, fontSize: 14 }}><b>{s.name}</b><br/><span style={{ fontSize: 12, color: '#6b7280' }}>{s.businessEmail || '—'}</span></td>
+                  <td style={{ padding: 10, fontSize: 14 }}>{s.category || '—'}</td>
+                  <td style={{ padding: 10, fontSize: 14 }}><code style={{ fontSize: 11, color: '#6b7280' }}>{s.payoutWallet.slice(0, 6)}…{s.payoutWallet.slice(-4)}</code></td>
+                  <td style={{ padding: 10, fontSize: 14 }}><Status>{s.verificationStatus}</Status></td>
+                  <td style={{ padding: 10, textAlign: 'right' }}>
+                    {s.verificationStatus === 'unverified' && <button className="btn primary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => handleVerify(s.id)}>Verify</button>}
+                    {s.verificationStatus !== 'unverified' && <button className="btn secondary" style={{ fontSize: 12, padding: '4px 10px' }} disabled>Verified</button>}
+                  </td>
+                </tr>
+              ))}
+              {(!suppliers || suppliers.length === 0) && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#6b7280' }}>No suppliers yet. Add your first supplier to get started.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     {open && <Modal title="Create supplier" description="Enter the supplier details and Solana payout wallet. The wallet is snapshotted and pinned on first verification." onClose={() => setOpen(false)}>
