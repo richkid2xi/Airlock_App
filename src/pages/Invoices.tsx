@@ -192,20 +192,20 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
     {open && <Modal title="Register invoice" description="Create a new invoice record linked to a verified supplier. Amounts are in minor units (e.g. USDC = 6 decimals)." onClose={() => setOpen(false)}>
       <form onSubmit={handleCreate}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <label className="field full">Invoice number<input name="invoiceNumber" required value={draft.invoiceNumber} onChange={e => setDraft({ ...draft, invoiceNumber: e.target.value })} placeholder="INV-2024-001" /></label>
-          <label className="field full">Supplier<select name="supplierId" required value={draft.supplierId} onChange={e => setDraft({ ...draft, supplierId: e.target.value })}>
+          <label className="field">Invoice number<input name="invoiceNumber" required value={draft.invoiceNumber} onChange={e => setDraft({ ...draft, invoiceNumber: e.target.value })} placeholder="INV-2024-001" /></label>
+          <label className="field">Supplier<select name="supplierId" required value={draft.supplierId} onChange={e => setDraft({ ...draft, supplierId: e.target.value })}>
             <option value="">Select a supplier</option>
             {suppliers?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select></label>
-          <label className="field full">Amount (minor units)<input name="amountMinor" type="number" min="1" required value={draft.amountMinor} onChange={e => setDraft({ ...draft, amountMinor: e.target.value })} placeholder="1000000" /></label>
-          <label className="field full">Currency<select name="currency" value={draft.currency} onChange={e => setDraft({ ...draft, currency: e.target.value })}>
+          <label className="field">Amount (minor units)<input name="amountMinor" type="number" min="1" required value={draft.amountMinor} onChange={e => setDraft({ ...draft, amountMinor: e.target.value })} placeholder="1000000" /></label>
+          <label className="field">Currency<select name="currency" value={draft.currency} onChange={e => setDraft({ ...draft, currency: e.target.value })}>
             <option>USDC</option><option>EUR</option><option>USD</option><option>GBP</option>
           </select></label>
-          <label className="field full">Mint address<input name="mint" value={draft.mint} onChange={e => setDraft({ ...draft, mint: e.target.value })} placeholder="USDC mint (optional)" /></label>
-          <label className="field full">Issue date<input name="issueDate" type="date" required value={draft.issueDate} onChange={e => setDraft({ ...draft, issueDate: e.target.value })} /></label>
-          <label className="field full">Due date<input name="dueDate" type="date" required value={draft.dueDate} onChange={e => setDraft({ ...draft, dueDate: e.target.value })} /></label>
-          <label className="field full">Document ref<input name="documentRef" value={draft.documentRef} onChange={e => setDraft({ ...draft, documentRef: e.target.value })} placeholder="IPFS hash or document ID" /></label>
-          <label className="field full">Notes<textarea name="notes" value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Optional notes" /></label>
+          <label className="field.full" style={{ gridColumn: 'span 2' }}>Mint address<input name="mint" value={draft.mint} onChange={e => setDraft({ ...draft, mint: e.target.value })} placeholder="USDC mint (optional)" /></label>
+          <label className="field.full" style={{ gridColumn: 'span 2' }}>Issue date<input name="issueDate" type="date" required value={draft.issueDate} onChange={e => setDraft({ ...draft, issueDate: e.target.value })} /></label>
+          <label className="field.full" style={{ gridColumn: 'span 2' }}>Due date<input name="dueDate" type="date" required value={draft.dueDate} onChange={e => setDraft({ ...draft, dueDate: e.target.value })} /></label>
+          <label className="field.full" style={{ gridColumn: 'span 2' }}>Document ref<input name="documentRef" value={draft.documentRef} onChange={e => setDraft({ ...draft, documentRef: e.target.value })} placeholder="IPFS hash or document ID" /></label>
+          <label className="field.full" style={{ gridColumn: 'span 2' }}>Notes<textarea name="notes" value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Optional notes" /></label>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={() => setOpen(false)}>Cancel</button>

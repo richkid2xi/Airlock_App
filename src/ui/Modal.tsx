@@ -10,7 +10,7 @@ export function Modal({ title, description, children, onClose, wide = false }: {
   return <div className="modal-layer" role="presentation" onMouseDown={e => e.target === e.currentTarget && onClose()}>
     <section className={`modal scrollbar-none ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <header><div><h2 id="modal-title">{title}</h2>{description && <p>{description}</p>}</div><button className="icon-btn" onClick={onClose} aria-label="Close"><Icon name="close"/></button></header>
-      <div className="modal-scroll">{children}</div>
+      <div className="modal-body scrollbar-none">{children}</div>
     </section>
   </div>
 }

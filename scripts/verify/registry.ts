@@ -39,15 +39,15 @@ function main() {
   const env = readEnvFile(envPath)
 
   const results: CheckResult[] = []
-  const token = getEnvValue(env, 'AIRLOCK_ACCESS_TOKEN')
-  const token2 = getEnvValue(env, 'AIRLOCK_ACCESS_TOKEN_2')
+  const token = getEnvValue(env, 'AIRLOCK_ACCESS_TOKEN') ?? getEnvValue(env, 'SUPABASE_ACCESS_TOKEN')
+  const token2 = getEnvValue(env, 'AIRLOCK_ACCESS_TOKEN_2') ?? getEnvValue(env, 'SUPABASE_ACCESS_TOKEN_2')
   const supabaseUrl = getEnvValue(env, 'VITE_SUPABASE_URL')
   const supabaseAnonKey = getEnvValue(env, 'VITE_SUPABASE_ANON_KEY')
 
   if (!supabaseUrl) {
-    results.push({ name: 'supabase_url', status: 'FAIL', reason: 'VITE_SUPABASE_URL missing' })
+    results.push({ name: 'supabase_url', status: 'FAIL', reason: 'VITE_SUPABASE_URL missing in .env.local' })
   } else if (!supabaseAnonKey) {
-    results.push({ name: 'supabase_anon_key', status: 'FAIL', reason: 'VITE_SUPABASE_ANON_KEY missing' })
+    results.push({ name: 'supabase_anon_key', status: 'FAIL', reason: 'VITE_SUPABASE_ANON_KEY missing in .env.local' })
   } else if (supabaseUrl.includes('supabase.co')) {
     results.push({ name: 'supabase_configured', status: 'PASS', reason: `${supabaseUrl} reachable via supabase-js client` })
   } else {
@@ -55,7 +55,7 @@ function main() {
   }
 
   if (!token) {
-    results.push({ name: 'access_token', status: 'FAIL', reason: 'AIRLOCK_ACCESS_TOKEN missing' })
+    results.push({ name: 'access_token', status: 'FAIL', reason: 'Set AIRLOCK_ACCESS_TOKEN (or SUPABASE_ACCESS_TOKEN) in .env.local' })
   } else {
     results.push({ name: 'access_token', status: 'SKIPPED', reason: 'Cross-user checks skipped without second token' })
   }

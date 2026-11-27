@@ -201,10 +201,10 @@ export function Policies({ path, navigate, notify }: { path: string; navigate: (
     {open && <Modal title="Create policy" description="Define spending limits and controls that agents must follow when initiating payments." onClose={() => setOpen(false)}>
       <form onSubmit={handleCreate}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <label className="field full">Policy name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Standard spend policy"/></label>
-          <label className="field full">Description<textarea name="description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="Optional description"/></label>
-          <label className="field full">Max invoice (minor units)<input name="maxInvoiceMinor" type="number" min="1" required value={draft.maxInvoiceMinor} onChange={e => setDraft({ ...draft, maxInvoiceMinor: e.target.value })} placeholder="100000"/></label>
-          <label className="field full">Daily cap (minor units)<input name="dailyCapMinor" type="number" min="1" required value={draft.dailyCapMinor} onChange={e => setDraft({ ...draft, dailyCapMinor: e.target.value })} placeholder="1000000"/></label>
+          <label className="field">Policy name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Standard spend policy"/></label>
+          <label className="field">Description<textarea name="description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="Optional description"/></label>
+          <label className="field">Max invoice (minor units)<input name="maxInvoiceMinor" type="number" min="1" required value={draft.maxInvoiceMinor} onChange={e => setDraft({ ...draft, maxInvoiceMinor: e.target.value })} placeholder="100000"/></label>
+          <label className="field">Daily cap (minor units)<input name="dailyCapMinor" type="number" min="1" required value={draft.dailyCapMinor} onChange={e => setDraft({ ...draft, dailyCapMinor: e.target.value })} placeholder="1000000"/></label>
           <div style={{ gridColumn: 'span 2' }}><small style={{ color: '#6b7280' }}>Amounts in minor units (e.g. USDC = 6 decimals)</small></div>
           <div style={{ gridColumn: 'span 2', fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Controls (each agent payment must satisfy all enabled controls):</div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><input name="requireVerifiedSupplier" type="checkbox" defaultChecked={draft.controls.requireVerifiedSupplier} /> Verified supplier required</label>
@@ -213,9 +213,9 @@ export function Policies({ path, navigate, notify }: { path: string; navigate: (
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><input name="requireSupportingEvidence" type="checkbox" defaultChecked={draft.controls.requireSupportingEvidence} /> Supporting evidence required</label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><input name="requireTwoPersonApproval" type="checkbox" defaultChecked={draft.controls.requireTwoPersonApproval} /> Two-person approval required</label>
           <div style={{ gridColumn: 'span 2', fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Assign agents:</div>
-          <select name="agentIds" multiple value={draft.agentIds.join(',')} onChange={e => setDraft({ ...draft, agentIds: Array.from(e.target.selectedOptions, o => o.value) })}>
+          <label className="field.full" style={{ gridColumn: 'span 2' }}><select name="agentIds" multiple value={draft.agentIds.join(',')} onChange={e => setDraft({ ...draft, agentIds: Array.from(e.target.selectedOptions, o => o.value) })}>
             {agents?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
+          </select></label>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={() => setOpen(false)}>Cancel</button>
@@ -227,10 +227,10 @@ export function Policies({ path, navigate, notify }: { path: string; navigate: (
     {editId !== null && <Modal title="Edit policy" description="Update spending limits and controls." onClose={() => setEditId(null)}>
       <form onSubmit={handleEdit}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <label className="field full">Policy name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Standard spend policy"/></label>
-          <label className="field full">Description<textarea name="description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="Optional description"/></label>
-          <label className="field full">Max invoice (minor units)<input name="maxInvoiceMinor" type="number" min="1" required value={draft.maxInvoiceMinor} onChange={e => setDraft({ ...draft, maxInvoiceMinor: e.target.value })} placeholder="100000"/></label>
-          <label className="field full">Daily cap (minor units)<input name="dailyCapMinor" type="number" min="1" required value={draft.dailyCapMinor} onChange={e => setDraft({ ...draft, dailyCapMinor: e.target.value })} placeholder="1000000"/></label>
+          <label className="field">Policy name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Standard spend policy"/></label>
+          <label className="field">Description<textarea name="description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="Optional description"/></label>
+          <label className="field">Max invoice (minor units)<input name="maxInvoiceMinor" type="number" min="1" required value={draft.maxInvoiceMinor} onChange={e => setDraft({ ...draft, maxInvoiceMinor: e.target.value })} placeholder="100000"/></label>
+          <label className="field">Daily cap (minor units)<input name="dailyCapMinor" type="number" min="1" required value={draft.dailyCapMinor} onChange={e => setDraft({ ...draft, dailyCapMinor: e.target.value })} placeholder="1000000"/></label>
           <div style={{ gridColumn: 'span 2' }}><small style={{ color: '#6b7280' }}>Amounts in minor units (e.g. USDC = 6 decimals)</small></div>
           <div style={{ gridColumn: 'span 2', fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Controls:</div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><input name="requireVerifiedSupplier" type="checkbox" defaultChecked={draft.controls.requireVerifiedSupplier} /> Verified supplier required</label>
@@ -239,9 +239,9 @@ export function Policies({ path, navigate, notify }: { path: string; navigate: (
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><input name="requireSupportingEvidence" type="checkbox" defaultChecked={draft.controls.requireSupportingEvidence} /> Supporting evidence required</label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><input name="requireTwoPersonApproval" type="checkbox" defaultChecked={draft.controls.requireTwoPersonApproval} /> Two-person approval required</label>
           <div style={{ gridColumn: 'span 2', fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Assign agents:</div>
-          <select name="agentIds" multiple value={draft.agentIds.join(',')} onChange={e => setDraft({ ...draft, agentIds: Array.from(e.target.selectedOptions, o => o.value) })}>
+          <label className="field.full" style={{ gridColumn: 'span 2' }}><select name="agentIds" multiple value={draft.agentIds.join(',')} onChange={e => setDraft({ ...draft, agentIds: Array.from(e.target.selectedOptions, o => o.value) })}>
             {agents?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
+          </select></label>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={() => setEditId(null)}>Cancel</button>
