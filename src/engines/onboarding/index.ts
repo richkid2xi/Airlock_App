@@ -1,8 +1,5 @@
 import type { OnboardingPort, OnboardingState } from './types'
-import { engineRegistry } from '../engineRegistry'
-import { mockOnboardingEngine } from './mock'
 import { LiveOnboardingEngine } from './live'
-import { withPolicyFallback } from '../fallbackPolicy'
 
 export class OnboardingEngineProxy implements OnboardingPort {
   private live: LiveOnboardingEngine | null = null
@@ -12,24 +9,15 @@ export class OnboardingEngineProxy implements OnboardingPort {
   }
 
   async get(): Promise<OnboardingState> {
-    return await withPolicyFallback('onboarding',
-      async () => this.getLive().get(),
-      async () => mockOnboardingEngine.get()
-    )
+    return await this.getLive().get()
   }
 
   async saveStep(step: number, data: Record<string, unknown>): Promise<void> {
-    return await withPolicyFallback('onboarding',
-      async () => this.getLive().saveStep(step, data),
-      async () => mockOnboardingEngine.saveStep(step, data)
-    )
+    return await this.getLive().saveStep(step, data)
   }
 
   async complete(): Promise<void> {
-    return await withPolicyFallback('onboarding',
-      async () => this.getLive().complete(),
-      async () => mockOnboardingEngine.complete()
-    )
+    return await this.getLive().complete()
   }
 }
 

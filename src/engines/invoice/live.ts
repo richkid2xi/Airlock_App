@@ -1,12 +1,9 @@
 import type { Invoice, InvoiceStatus } from '../../domain/types'
 import type { InvoiceEnginePort, CreateInvoiceParams } from './types'
-import { mockInvoiceEngine } from './mock'
 
 /**
  * Live Invoice Engine
  * Communicates with backend/on-chain registry.
- * If backend endpoint is unconfigured or unreachable, it throws a transport error
- * to be caught by withFallback.
  */
 export class LiveInvoiceEngine implements InvoiceEnginePort {
   private apiUrl: string

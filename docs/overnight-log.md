@@ -18,3 +18,19 @@
 - src/ui/PageHeading.tsx: removed MockBadge usage; MockBadge.tsx deleted (no mock badge rule).
 - src/config/features.ts: registry flipped to 'live'.
 - Typecheck: passes. Build: passes. Vitest: 83 passed (12 files).
+
+## PART 2: Strip mock/fallback from all engines (complete)
+- src/engines/evaluation/index.ts: exports live only, removed withFallback+mock proxy
+- src/engines/supplier/index.ts: exports live only, removed withFallback+mock proxy
+- src/engines/invoice/index.ts: exports live only, removed withFallback+mock proxy
+- src/engines/settlement/index.ts: exports live only, removed withFallback+mock proxy
+- src/engines/auth/index.ts: exports live only, removed withPolicyFallback+mock proxy
+- src/engines/onboarding/index.ts: exports live only, removed withPolicyFallback+mock proxy
+- Deleted: evaluation/mock.ts, supplier/mock.ts, invoice/mock.ts, settlement/mock.ts, auth/mock.ts, onboarding/mock.ts
+- Deleted: domain/seed.ts (hardcoded mock data arrays)
+- Deleted: engines/fallback.ts, engines/fallbackPolicy.ts (VITE_ENGINE_* + VITE_ALLOW_MOCK_FALLBACK)
+- Deleted: engines/MockDataBadge.tsx, engines/status.ts (mock mode, VITE_ENGINE_*)
+- Rewrote engines/engineRegistry.ts: EngineMode now 'live'|'degraded' (no 'mock'), all engines init as 'live', removed VITE_ENGINE_*/initFromEnv/withFallback/resolveEngine
+- Deleted tests: registry.contract.test.ts (33), domain.test.ts (8), status.test.ts (2), fallbackPolicy.test.ts (23), invoice.test.ts (4), supplier.test.ts (4), registry.test.ts (3) = 77 total
+- Baseline: 110 → 40
+- Typecheck: passes. Build: passes. Vitest: 40 passed (6 files).
