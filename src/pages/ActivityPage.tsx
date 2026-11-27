@@ -5,6 +5,7 @@ import { PageHeading } from '../ui/PageHeading'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { TransactionTable } from './Dashboard'
 import { InProgress } from '../ui/InProgress'
+import { Dropdown } from '../ui/Dropdown'
 
 export function ActivityPage({ approvals = false, rows, path, navigate, agents, onDecision, notify }: {
   approvals?: boolean
@@ -55,7 +56,11 @@ export function ActivityPage({ approvals = false, rows, path, navigate, agents, 
   return <>
     <PageHeading title={approvals ? 'Approvals' : 'Payment activity'} description={approvals ? `${held.length} payment requests require a human decision.` : 'Inspect every AI-agent payment request and rule evaluation.'}/>
     <section className="panel workspace-panel">
-      <div className="workspace-tools"><div className="table-search"><Icon name="search"/><input value={query} onChange={e => {setQuery(e.target.value);setPage(1)}} placeholder="Search reference, supplier or agent…"/></div>{!approvals && <label className="select-filter"><Icon name="filter"/><select value={decision} onChange={e => setDecision(e.target.value)}><option>All</option><option>ALLOW</option><option>BLOCK</option><option>HOLD</option></select></label>}<label className="select-filter"><Icon name="bot"/><select value={agent} onChange={e => setAgent(e.target.value)}><option>All</option>{agents.map(x => <option key={x[0]}>{x[0]}</option>)}</select></label></div>
+      <div className="workspace-tools">
+        <div className="table-search"><Icon name="search"/><input value={query} onChange={e => {setQuery(e.target.value);setPage(1)}} placeholder="Search reference, supplier or agent…"/></div>
+        {!approvals && <Dropdown label="Decision" icon="filter" options={[{value:'All',label:'All'},{value:'ALLOW',label:'ALLOW'},{value:'BLOCK',label:'BLOCK'},{value:'HOLD',label:'HOLD'}]} value={decision} onChange={setDecision} />}
+        <Dropdown label="Agent" icon="bot" options={[{value:'All',label:'All'},...agents.map(x=>({value:x[0],label:x[0]}))]} value={agent} onChange={setAgent} align="right" />
+      </div>
         {visible.length > 0 ? <TransactionTable rows={visible} onOpen={x => navigate(`${base}${encodeURIComponent(x)}`)}/> : <div className="empty-state"><Icon name={approvals ? 'check' : 'search'}/><b>{approvals ? 'Approval queue is clear' : 'No activity found'}</b><p>{approvals ? 'There are no held payment requests awaiting review.' : 'Change your search or filter selection.'}</p></div>}
         <div className="pagination"><span>Showing {filtered.length ? (page - 1) * 6 + 1 : 0}–{Math.min(page * 6, filtered.length)} of {filtered.length}</span><div><button disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</button><button disabled={page * 6 >= filtered.length} onClick={() => setPage(page + 1)}>Next</button></div></div>
       </section>
