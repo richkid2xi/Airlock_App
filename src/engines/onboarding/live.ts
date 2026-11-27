@@ -8,7 +8,7 @@
 
 import type { OnboardingPort, OnboardingState } from './types'
 import { supabase } from '../../lib/supabase'
-import { decimalStringToBigInt } from '@airlock/shared/minorUnits'
+import { decimalStringToBigInt, minorUnitsToInputString } from '@airlock/shared/minorUnits'
 
 function mapDraftToDb(step: number, draft: Record<string, unknown>): Record<string, unknown> {
   const db: Record<string, unknown> = {}
@@ -56,8 +56,8 @@ export class LiveOnboardingEngine implements OnboardingPort {
     if (row.settlement_cluster != null) draft.settlementCluster = row.settlement_cluster
     if (row.settlement_asset != null) draft.settlementAsset = row.settlement_asset
     if (row.reporting_currency != null) draft.reportingCurrency = row.reporting_currency
-    if (row.max_invoice_minor != null) draft.maxInvoiceAmount = String(row.max_invoice_minor)
-    if (row.approval_threshold_minor != null) draft.approvalThreshold = String(row.approval_threshold_minor)
+    if (row.max_invoice_minor != null) draft.maxInvoiceAmount = minorUnitsToInputString(BigInt(String(row.max_invoice_minor)))
+    if (row.approval_threshold_minor != null) draft.approvalThreshold = minorUnitsToInputString(BigInt(String(row.approval_threshold_minor)))
     return { draft, completed, step }
   }
 

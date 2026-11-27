@@ -78,3 +78,19 @@ export function parseMinorUnits(units: string): bigint {
 export function formatMinorUnits(units: bigint): string {
   return bigIntToDecimalString(units)
 }
+
+/**
+ * Convert bigint minor units back to a clean decimal string suitable for
+ * form inputs (no thousands separators, no trailing fractional zeros).
+ * e.g. 1000000000n => "1000", 5050000000n => "5050".
+ */
+export function minorUnitsToInputString(minorUnits: bigint): string {
+  const raw = bigIntToDecimalString(minorUnits)
+  const withoutCommas = raw.replace(/,/g, '')
+  if (withoutCommas.includes('.')) {
+    const [i, d] = withoutCommas.split('.')
+    const dTrim = d.replace(/0+$/, '')
+    return dTrim ? `${i}.${dTrim}` : i
+  }
+  return withoutCommas
+}

@@ -201,12 +201,13 @@
 .org-switch { height:38px; display:flex; align-items:center; gap:8px; border:0; background:transparent; padding:0 7px; border-radius:8px; font-size:11px; }
 .org-switch:hover { background:var(--subtle); }
 .org-switch svg { transform:rotate(90deg); color:var(--muted); }
-.search-trigger { width:170px; height:36px; border:1px solid var(--line); background:#f8faf9; color:var(--muted); border-radius:8px; display:flex; align-items:center; gap:8px; padding:0 9px; font-size:11px; margin:0 8px; }
-.search-trigger kbd { margin-left:auto; background:white; border:1px solid var(--line); border-radius:4px; padding:2px 5px; font-size:9px; }
+.search-trigger { width:98px; height:32px; border:1px solid var(--line); background:#f8faf9; color:var(--muted); border-radius:8px; display:flex; align-items:center; gap:6px; padding:0 8px; font-size:10px; }
 .notification { position:relative; }
 .notification i { position:absolute; width:6px; height:6px; background:var(--red); border-radius:50%; top:7px; right:8px; outline:2px solid white; }
-.wallet-profile { height:40px; display:flex; align-items:center; gap:7px; border:1px solid var(--line); background:#fff; border-radius:9px; padding:0 8px 0 5px; text-align:left; color:var(--ink); }
+.wallet-profile { height:34px; gap:6px; border-radius:8px; padding:0 7px 0 4px; }
 .wallet-profile:hover{background:var(--subtle)}.wallet-profile b,.wallet-profile small{display:block}.wallet-profile b{font-size:9px}.wallet-profile small{font-size:7px;color:var(--muted);margin-top:2px}.wallet-profile>svg{transform:rotate(90deg);color:var(--muted)}
+.wallet-disconnect { margin-top:10px; }
+.wallet-disconnect .btn { font-size:11px; width:auto; padding:6px 12px; }
 .mobile-menu { display:none; }
 .content { padding:30px; max-width:1540px; margin:auto; }
 .welcome-row,.content-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:24px; }
