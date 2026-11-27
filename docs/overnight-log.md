@@ -94,5 +94,53 @@
 ### Feature gates
 - FEATURES.policies = in_progress (others per config/features.ts).
 
+## PART 6: Registry slice completion — suppliers / invoices / policies / agents / settings (complete)
+
+### Commits
+- 37da573 shared: add base58 decode utility and payout wallet validation
+- 9126b4e invoices: add filters, detail modal, document upload & signed URL, timeline
+- 164e858 registry/engine: add document upload and signed URL methods
+- 22c583c policies: full CRUD with search, detail modal, controls, agent assignment
+- 60f2bd5 agents: edit modal, limits controls, inline validation, assigned policies
+- 7e5db2a settings: demo data Load/Reset wired to registry engine
+
+### Suppliers
+- Search (name/email) + verification status filter.
+- Create/edit with base58 payout-wallet validation (`validatePayoutWallet`, 32-byte decode).
+- Verify via `verify_supplier` RPC; payout-wallet edit resets verification → UI shows reset notice.
+
+### Invoices
+- Status filter + search by invoice number/supplier.
+- Detail modal: fields, timeline (registered/attested/disputed/paid), notes.
+- Document upload to private `invoice-documents` bucket (org-scoped path) + signed-URL viewing.
+
+### Policies
+- FEATURES.policies flipped to live.
+- Real list/search/create/edit via registryEngine; five controls; agent assignment via `assignAgents`.
+- Detail modal showing limits/controls summary.
+
+### Agents
+- Edit modal (name/description/limits/status/currency/policies); identifier shown read-only (UpdateAgentInput has no identifier).
+- `setLimits` per-request/daily controls; inline validation (integer, per>0, daily>=per).
+- Status toggle and policy assignment.
+
+### Settings
+- Demo data section: Load demo data (load_demo_data) and Reset demo data (reset_demo_data) with danger confirm.
+- resetDemoData()/loadDemoData() added to RegistryEnginePort + live engine.
+
+### Cleanup / docs
+- Deleted unused legacy pages: DataWorkspace.tsx, EntityDetail.tsx, CreationForm.tsx.
+- docs/testing/registry.md: click-by-click manual checklist.
+- scripts/verify/registry.ts + `pnpm verify:registry` (env presence checks; cross-user check SKIPPED without second token).
+
+### Verification (run)
+- `npx tsc --noEmit` clean, `npx vitest run` 46 passed (8 files), `npx vite build` succeeds.
+
+### Needs Elikem
+- Run `pnpm verify:registry` with `AIRLOCK_ACCESS_TOKEN` (and optionally `AIRLOCK_ACCESS_TOKEN_2`) plus `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` in `.env.local` against the hosted project.
+- Manual pass through docs/testing/registry.md (needs wallet + devnet session).
+- Confirm `load_demo_data` / `reset_demo_data` RPCs exist on the hosted project (0004 migration added reset_demo_data; load_demo_data must already exist from earlier migration).
+
+
 
 

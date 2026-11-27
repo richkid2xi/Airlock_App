@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run --reporter=json --outputFile=.test-results.json",
     "typecheck": "tsc --noEmit",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "verify:registry": "vite-node scripts/verify/registry.ts"
   },
   "dependencies": {
     "@solana/wallet-adapter-base": "^0.9.28",

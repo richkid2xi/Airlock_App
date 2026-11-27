@@ -23,7 +23,7 @@ export const FEATURES: Record<FeatureName, FeatureState> = {
   registry: 'live',
   evaluation: 'live',
   requests: 'in_progress',
-  policies: 'in_progress',
+  policies: 'live',
   approvals: 'in_progress',
   chain: 'in_progress',
   metrics: 'in_progress',
