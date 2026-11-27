@@ -47,7 +47,7 @@ SELECT results_eq(
 -- Test 4: User A cannot see B's org via WHERE filter
 SELECT results_eq(
   $test$SELECT count(*) FROM public.organizations WHERE owner_id = '22222222-2222-2222-2222-222222222222'$test$,
-  $test$SELECT 0::bigint',
+  $test$SELECT 0::bigint$test$,
   'User A cannot see B org via filter'
 );
 
@@ -107,14 +107,13 @@ SELECT throws_ok(
   'CHECK: onboarding_step must be 1..4'
 );
 
--- Test 12: complete_onboarding rejects incomplete org (no name)
--- First create an incomplete org for user A (no name)
-INSERT INTO public.organizations (owner_id) VALUES ('11111111-1111-1111-1111-111111111111');
+-- Test 12: second org insert for same owner rejected by unique constraint
 SELECT throws_ok(
-  $test$SELECT public.complete_onboarding()$test$,
-  'P0001',
-  'Organization name is required to complete onboarding',
-  'complete_onboarding rejects incomplete org (no name)'
+  $test$INSERT INTO public.organizations (owner_id, name, business_email)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'Org A Duplicate', 'dup@test.local')$test$,
+  '23505',
+  NULL,
+  'Second org insert for same owner rejected by organizations_owner_unique'
 );
 
 -- Test 13: complete_onboarding succeeds on complete org
@@ -131,7 +130,7 @@ SELECT lives_ok(
 -- Test 14: onboarded_at is set after complete_onboarding
 SELECT results_eq(
   $test$SELECT count(*) FROM public.organizations WHERE owner_id = '11111111-1111-1111-1111-111111111111' AND onboarded_at IS NOT NULL$test$,
-  $test$SELECT 1::bigint',
+  $test$SELECT 1::bigint$test$,
   'onboarded_at is set after complete_onboarding'
 );
 
