@@ -40,3 +40,12 @@
 - src/shell/DashboardApp.tsx: Attack Lab renders AttackLab under FeatureGate(feature="evaluation")
 - src/config/features.ts: evaluation flipped to 'live'
 - Typecheck: passes. Build: passes. Vitest: 40 passed (6 files).
+
+## UI Polish: Topbar + Sidebar + Dashboard cleanup (c3f4d41)
+- src/shell/Topbar.tsx: remove Help icon; replace wallet-profile badge + Log out text button with single LogOut icon button (title="Log out", hover red); add outside-click (mousedown) + Escape handlers; redesign notifications popover (right-aligned, crisp borders/shadow, "Mark all as read" header, empty state with bell icon)
+- src/index.css: hide nav scrollbar while keeping overflow-y:auto (scrollbar-width:none, -ms-overflow-style:none, ::-webkit-scrollbar display:none); add .logout-btn styles; add .notification-header/.mark-read/.notification-panel ul/li styles
+- src/shell/Sidebar.tsx: remove .environment "Protection active / All systems operational" card from .sidebar-footer; keep .profile-card wallet selector
+- src/shell/DashboardApp.tsx: replace FeatureGate(feature="metrics") + WelcomePanel with real Dashboard layout; remove WelcomePanel function and unused imports (Status, FeatureGate, orgName lookup); render Dashboard for /app, real pages for others
+- src/pages/Dashboard.tsx: strip all hardcoded mock data — `€184,620`→`--`, `12`→`0`, `approvalCount` default 3→0, `142 requests`→`0`, `127 89%/9 6%/6 4%`→`0 0%`, `All 7 policies`→`No policies configured`, hardcoded security events array→filter from activityRows, `Good morning, Maya`→`Dashboard`, `MONDAY, MAY 19`→empty
+- Verified by running: tsc --noEmit (clean), vitest run (8 files / 46 tests pass), vite build (succeeds)
+- Needs Elikem: none
