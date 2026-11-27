@@ -20,6 +20,11 @@ export const pageRoutes: Record<string, string> = {
   Settings: '/app/settings',
 }
 
+export type SearchablePage = { label: string; group: string; path: string }
+export const searchablePages: SearchablePage[] = nav.flatMap((section) =>
+  section.items.map(([label]) => ({ label, group: section.group, path: pageRoutes[label] })),
+)
+
 export function Sidebar({ page, navigate, open, close, approvalCount = 0 }: { page: string; navigate: (p: string) => void; open: boolean; close: () => void; approvalCount?: number }) {
   return <>
     {open && <button className="scrim" aria-label="Close navigation" onClick={close}/>}
