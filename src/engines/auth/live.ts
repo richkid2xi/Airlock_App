@@ -74,6 +74,43 @@ export class LiveAuthEngine implements AuthPort {
     return session;
   }
 
+  async connectAndSignIn(walletName: string): Promise<AuthSession> {
+    const account = await this.source.connect(walletName);
+    const signer = this.source.getSigner();
+    if (!signer) throw new AuthError("Wallet did not provide a signer", "no_signer");
+    const wallet = toSupabaseWallet(signer);
+
+    let data: any;
+    try {
+      const result = await supabase.auth.signInWithWeb3({
+        chain: 'solana',
+        statement: 'Sign in to Airlock. This does not move funds.',
+        wallet,
+      });
+      data = result.data;
+      if (result.error) throw mapAuthError(result.error);
+    } catch (err) {
+      throw mapAuthError(err);
+    }
+
+    const userSession = this.sessionFromUser(data?.user);
+    if (!userSession)
+      throw new AuthError("Wallet identity not found on Supabase user", "no_identity");
+
+    const verdict = compareWalletIdentity({
+      user: data?.user ?? null,
+      publicKey: account.publicKey,
+    });
+    if (verdict !== "match") {
+      await this.forceSignOut(reasonFor(verdict));
+      throw new AuthError(`Wallet identity ${verdict}`, "identity_" + verdict);
+    }
+
+    this.currentSession = userSession;
+    this.emit(userSession);
+    return userSession;
+  }
+
   async signIn(): Promise<AuthSession> {
     const signer = this.source.getSigner();
     if (!signer) throw new AuthError("No wallet connected; cannot sign in", "no_wallet");

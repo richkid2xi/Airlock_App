@@ -12,6 +12,8 @@ export type AuthSession = {
 export interface AuthPort {
   /** Connect with a wallet. Returns the (mock or real) session identity. */
   connect(walletName: string): Promise<AuthSession>;
+  /** Connect with a wallet and complete Supabase Web3 sign-in. Returns the session. */
+  connectAndSignIn(walletName: string): Promise<AuthSession>;
   /** Sign in / prove wallet ownership. */
   signIn(): Promise<AuthSession>;
   /** Current session or null. */

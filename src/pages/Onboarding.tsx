@@ -5,7 +5,7 @@ import { Status } from '../ui/Status'
 import { onboardingEngine } from '../engines/onboarding'
 import { OnboardingStep1Schema, OnboardingStep2Schema } from '@airlock/shared'
 
-const steps = ['Connect wallet', 'Organization', 'Payment setup', 'Security', 'Complete']
+const steps = ['Organization', 'Payment setup', 'Security', 'Complete']
 
 type Draft = {
   organizationName: string
@@ -67,10 +67,8 @@ function validateStep2(draft: Draft): FieldErrors {
   }
 }
 
-export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onComplete: () => void; startAt?: number; onWalletConnected?: () => void }) {
+export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void; startAt?: number }) {
   const [step, setStep] = useState(startAt)
-  const [walletConnected, setWalletConnected] = useState(startAt > 0)
-  const [connecting, setConnecting] = useState(false)
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [maxSavedStep, setMaxSavedStep] = useState(startAt)
@@ -136,17 +134,17 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
   }
 
   const goNext = async () => {
-    if (step === 1) {
+    if (step === 0) {
       const e = validateStep1(draft)
       setErrors(e)
       if (e.organizationName || e.businessEmail) return
     }
-    if (step === 2) {
+    if (step === 1) {
       const e = validateStep2(draft)
       setErrors(e)
       if (e.maxInvoiceAmount || e.approvalThreshold) return
     }
-    if (step === 4) {
+    if (step === 3) {
       setCompleteState('loading')
       setCompleteError(null)
       try {
@@ -162,34 +160,7 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
     setStep(step + 1)
   }
 
-  const connectWallet = () => {
-    setConnecting(true)
-    setWalletConnected(true)
-    onWalletConnected?.()
-    goNext()
-  }
-
   const content: ReactNode[] = [
-    <div className="wallet-entry" key="wallet-entry">
-      <div className="eyebrow"><span className="pulse-dot"/> Wallet-secured access</div>
-      <h1>Connect your wallet<br/>to enter Airlock.</h1>
-      <p>Your wallet is your secure identity. Airlock will request a signature to verify ownership—no transaction or gas fee is required.</p>
-      {!walletConnected ? <>
-        <div className="wallet-options">
-          <button onClick={connectWallet} disabled={connecting}><span className="wallet-provider fox">M</span><span><b>{connecting ? 'Waiting for wallet…' : 'MetaMask'}</b><small>Browser extension</small></span><Icon name="chevron"/></button>
-          <button onClick={connectWallet}><span className="wallet-provider coin">C</span><span><b>Coinbase Wallet</b><small>Browser or mobile</small></span><Icon name="chevron"/></button>
-          <button onClick={connectWallet}><span className="wallet-provider connect">W</span><span><b>WalletConnect</b><small>Scan with a mobile wallet</small></span><Icon name="chevron"/></button>
-        </div>
-        <div className="wallet-safety"><Icon name="shield"/><span><b>Signature only</b><small>Airlock can’t access your funds or move assets by connecting.</small></span></div>
-      </> : <>
-        <div className="connected-identity">
-          <div className="wallet-identicon">0x</div>
-          <div><span className="connection-status"><i/> Wallet connected</span><b>—</b><small>Ethereum · Network verified</small></div>
-          <button className="btn quiet" onClick={() => setWalletConnected(false)}>Disconnect</button>
-        </div>
-        <button className="btn primary wallet-continue" onClick={() => { onWalletConnected?.(); goNext() }}>Continue with this wallet <Icon name="arrow"/></button>
-      </>}
-    </div>,
     <div className="form-content" key="org">
       <div className="step-kicker">Organization setup</div>
       <h2>Tell us about your organization</h2>
@@ -251,9 +222,9 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
     <header className="onboarding-header"><Logo/><div className="secure-label"><Icon name="lock" size={15}/> Secure setup</div></header>
     <div className="onboarding-layout">
       <section className="onboarding-main">
-        <div className="progress-mobile">Step {step + 1} of 5 <span><i style={{width: `${(step + 1) / 5 * 100}%`}}/></span></div>
+        <div className="progress-mobile">Step {step + 1} of 4 <span><i style={{width: `${(step + 1) / 4 * 100}%`}}/></span></div>
         <div className="onboarding-content">{content[step]}</div>
-        {step > 0 && <div className="form-actions"><button className="btn quiet" onClick={() => setStep(step - 1)}>Back</button><button className="btn primary" onClick={goNext} disabled={step === 4 && completeState === 'loading'}>{step === 4 ? (completeState === 'loading' ? 'Completing…' : 'Go to dashboard') : 'Continue'} <Icon name="arrow"/></button></div>}
+        {step > 0 && <div className="form-actions"><button className="btn quiet" onClick={() => setStep(step - 1)}>Back</button><button className="btn primary" onClick={goNext} disabled={step === 3 && completeState === 'loading'}>{step === 3 ? (completeState === 'loading' ? 'Completing…' : 'Go to dashboard') : 'Continue'} <Icon name="arrow"/></button></div>}
       </section>
       <aside className="onboarding-aside">
         <div className="aside-art" aria-hidden="true">

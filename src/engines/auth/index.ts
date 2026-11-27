@@ -12,6 +12,10 @@ export class AuthEngineProxy implements AuthPort {
     return await this.getLive().connect(walletName);
   }
 
+  async connectAndSignIn(walletName: string): Promise<AuthSession> {
+    return await this.getLive().connectAndSignIn(walletName);
+  }
+
   async signIn(): Promise<AuthSession> {
     return await this.getLive().signIn();
   }

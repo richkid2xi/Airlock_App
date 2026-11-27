@@ -139,6 +139,7 @@ If a conflict touches a page the developer is wiring:
 | `src/pages/AttackLab.tsx` | Attack Lab simulation | Live — evaluation engine |
 | `src/pages/SettingsPage.tsx` | Settings (org, wallet, engine status, identity) | Live — partially hardcoded |
 | `src/pages/Onboarding.tsx` | Onboarding steps 1-4 | Live — onboarding engine |
+| `src/pages/Connect.tsx` | Connect wallet page | Live — auth engine |
 | `src/pages/Landing.tsx` | Landing page | Live |
 | `src/pages/ActivityPage.tsx` | Activity (exists, gated) | In progress — not yet routed |
 | `src/pages/EntityDetail.tsx` | Entity detail view | Live — used by detail pages |
@@ -267,23 +268,23 @@ Rules that apply on every page. Each rule has a "why" and a repo example.
 
 ### Connect
 
-**Route and file:** `/app/connect` — `src/pages/Onboarding.tsx` (onboarding includes connect step)  
-**Wiring status:** live (onboarding feature = 'live')  
+**Route and file:** `/` and `/connect` — `src/pages/Connect.tsx`  
+**Wiring status:** live (auth feature = 'live')  
 **Data it shows:** Wallet provider list from `authEngine.list()`, connection status from `authEngine.getSession()`  
-**MUST KEEP:** Wallet provider buttons with `onClick` calling `authEngine.connect()`, "Connect wallet" button, connection status indicator, devnet cluster label  
-**CAN RESTYLE OR MOVE:** Button styles, provider icons, layout of the wallet selection grid  
+**MUST KEEP:** Wallet provider buttons with `onClick` calling `authEngine.connectAndSignIn(walletName)`, connection status indicator, devnet cluster label, "Signature only" safety notice  
+**CAN RESTYLE OR MOVE:** Button styles, provider icons, layout of the wallet selection grid, card styling  
 **CAN REMOVE:** Nothing — all elements are data-bound or action-critical  
-**WATCH OUT:** The connect flow calls `authEngine.connect(walletName)` which throws on unknown wallets — keep error handling visible
+**WATCH OUT:** The connect flow calls `authEngine.connectAndSignIn(walletName)` which throws on unknown wallets, identity mismatch, or network errors — keep error handling visible. Error state shows a "Try again" button that re-renders the wallet list.
 
 ### Onboarding steps 1 to 4
 
-**Route and file:** `/app/onboarding` — `src/pages/Onboarding.tsx`  
+**Route and file:** `/onboarding` — `src/pages/Onboarding.tsx`  
 **Wiring status:** live (onboarding feature = 'live')  
 **Data it shows:** Onboarding step state from `onboardingEngine.get()`, step data from `onboardingEngine.saveStep()`, completion from `onboardingEngine.complete()`  
-**MUST KEEP:** Step navigation (progress-steps), form fields with `name`/`id`/`htmlFor`, validation messages, inline error slots, "Save"/"Continue" buttons with handlers, autosave behavior  
+**MUST KEEP:** Step navigation (progress-steps with 4 steps: Organization, Payment setup, Security, Complete), form fields with `name`/`id`/`htmlFor`, validation messages, inline error slots, "Save"/"Continue" buttons with handlers, autosave behavior  
 **CAN RESTYLE OR MOVE:** Field layout, button styles, progress indicator appearance  
 **CAN REMOVE:** Nothing — every field is tied to engine state  
-**WATCH OUT:** Controlled inputs — do not convert to uncontrolled. The `form-grid` class is SHARED (used by 5 pages).
+**WATCH OUT:** Controlled inputs — do not convert to uncontrolled. The `form-grid` class is SHARED (used by 5 pages). The connect wallet step has been moved to the dedicated `/` and `/connect` Connect page.
 
 ### Dashboard
 

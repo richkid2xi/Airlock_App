@@ -40,6 +40,7 @@ react(),
     },
     test: {
       include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+      environment: 'jsdom',
     },
     server: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',

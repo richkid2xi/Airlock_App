@@ -1,23 +1,18 @@
 import { useRoute } from '../router/useRoute'
 import { Onboarding } from '../pages/Onboarding'
+import { Connect } from '../pages/Connect'
 import { DashboardApp } from './DashboardApp'
 import { Logo } from '../ui/Logo'
 import { useParams } from 'react-router'
 
 function ConnectRoute() {
   const { navigate } = useRoute()
-  return (
-    <Onboarding
-      startAt={0}
-      onWalletConnected={() => navigate('/onboarding')}
-      onComplete={() => navigate('/app')}
-    />
-  )
+  return <Connect onComplete={() => navigate('/onboarding')} />
 }
 
 function OnboardingRoute() {
   const { navigate } = useRoute()
-  return <Onboarding startAt={1} onComplete={() => navigate('/app')} />
+  return <Onboarding startAt={0} onComplete={() => navigate('/app')} />
 }
 
 function AppShellRoute() {
