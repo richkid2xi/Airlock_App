@@ -1,5 +1,5 @@
 {
   "totalTestsBaseline": 40,
   "lastVerified": "2026-11-27",
-  "notes": "Lowered from 110 by 77 total: deleted registry.contract.test.ts (33), domain.test.ts (8), status.test.ts (2), fallbackPolicy.test.ts (23), invoice.test.ts (4), supplier.test.ts (4), registry.test.ts (3) — all subjects were mock/fallback/seed code removed per no-mock policy"
+  "notes": "Lowered from 110 by 76 total: deleted registry.contract.test.ts (33), domain.test.ts (7), status.test.ts (2), fallbackPolicy.test.ts (23), invoice.test.ts (4), supplier.test.ts (4), registry.test.ts (3) — all subjects were mock/fallback/seed code removed per no-mock policy"
 }

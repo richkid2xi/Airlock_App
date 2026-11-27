@@ -13,7 +13,7 @@ export function SettingsPage({ notify, onLogout }: { notify: (m: string) => void
   const sections = [
     ['building', 'Organization profile', 'Business details, address and industry'],
     ['wallet', 'Wallet configuration', 'Connected wallets and payment networks'],
-    ['shield', 'Engine status', 'Live, mock, and degraded engine statuses'],
+    ['shield', 'Engine status', 'Live and degraded engine statuses'],
     ['users', 'Team & access', 'Wallet roles and permissions'],
     ['bell', 'Notifications', 'Payment and security alert preferences'],
     ['shield', 'Security preferences', 'Signatures, sessions and approval controls'],
