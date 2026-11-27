@@ -68,7 +68,7 @@ function validateStep2(draft: Draft): FieldErrors {
   }
 }
 
-export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void; startAt?: number }) {
+export function Onboarding({ onComplete, startAt = 0, walletName }: { onComplete: () => void; startAt?: number; walletName?: string }) {
   const { navigate } = useRoute()
   const [step, setStep] = useState(startAt)
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
@@ -250,7 +250,7 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
       <p className="lead">{draft.organizationName || 'Your organization'} is protected by Airlock. You can now register invoices, verify suppliers and authorize AI agents.</p>
       <div className="summary-box">
         {[
-          `Wallet identity verified · —`,
+          `Wallet identity verified · ${walletName ? `using ${walletName}` : '—'}`,
           `Organization · ${draft.organizationName || '—'} · ${draft.businessEmail || '—'}`,
           `Settlement · Solana (${cluster}) · USDC`,
           `Max invoice · ${draft.maxInvoiceAmount || '—'} · Threshold · ${draft.approvalThreshold || '—'}`,

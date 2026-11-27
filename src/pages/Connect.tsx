@@ -7,7 +7,7 @@ import { useRoute } from '../router/useRoute'
 
 type WalletRow = { name: string; icon: string; readyState: string; installUrl?: string }
 
-export function Connect({ onComplete }: { onComplete: () => void }) {
+export function Connect({ onComplete }: { onComplete: (walletName?: string) => void }) {
   const [wallets, setWallets] = useState<WalletRow[]>([])
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState<string | null>(null)
@@ -35,7 +35,7 @@ export function Connect({ onComplete }: { onComplete: () => void }) {
       try {
         await authEngine.connectAndSignIn(walletName)
         setToast({ message: 'Account connected', tone: 'success' })
-        setTimeout(() => onComplete(), 1200)
+        setTimeout(() => onComplete(walletName), 1200)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to connect wallet')
         setConnecting(null)

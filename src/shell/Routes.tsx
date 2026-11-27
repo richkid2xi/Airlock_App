@@ -7,12 +7,13 @@ import { useParams } from 'react-router'
 
 function ConnectRoute() {
   const { navigate } = useRoute()
-  return <Connect onComplete={() => navigate('/onboarding')} />
+  return <Connect onComplete={(walletName) => navigate('/onboarding', { state: { walletName } })} />
 }
 
 function OnboardingRoute() {
-  const { navigate } = useRoute()
-  return <Onboarding startAt={0} onComplete={() => navigate('/app')} />
+  const { navigate, location } = useRoute()
+  const walletName = (location.state as { walletName?: string } | undefined)?.walletName
+  return <Onboarding startAt={0} onComplete={() => navigate('/app')} walletName={walletName} />
 }
 
 function AppShellRoute() {
