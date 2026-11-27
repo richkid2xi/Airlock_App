@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router'
-import { useMemo } from 'react'
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
 import { ConnectRoute } from './shell/Routes'
 import { OnboardingRoute } from './shell/Routes'
@@ -20,11 +18,9 @@ function getRpcUrl(): string {
 
 export default function App() {
   const endpoint = getRpcUrl()
-  const wallets = useMemo(() => [new PhantomWalletAdapter()], [])
-
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect={false}>
+      <WalletProvider wallets={[]} autoConnect={false}>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<ConnectRoute />} />
