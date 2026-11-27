@@ -1,5 +1,5 @@
 export * from './types'
-import { liveRegistryEngine, loadDemoData } from './live'
+import { liveRegistryEngine } from './live'
 
-export { liveRegistryEngine, loadDemoData }
+export { liveRegistryEngine }
 export const registryEngine = liveRegistryEngine

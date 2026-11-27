@@ -63,6 +63,8 @@ export type RegistryEnginePort = {
     uploadDocument(id: string, file: File): Promise<Invoice>
     getDocumentUrl(id: string): Promise<{ url: string; expiresIn: number }>
   }
+  resetDemoData(): Promise<void>
+  loadDemoData(): Promise<void>
 }
 
 export class RegistryPortError extends Error {

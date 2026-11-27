@@ -3,6 +3,8 @@ import { Icon, type IconName } from '../ui/Icon'
 import { Status } from '../ui/Status'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { FEATURES, type FeatureName, FEATURE_LABELS } from '../config/features'
+import { registryEngine } from '../engines/registry/index'
+import { RegistryPortError } from '../engines/registry/types'
 
 type SectionDef = { icon: IconName; title: string; subtitle: string; feature: FeatureName }
 
@@ -14,19 +16,44 @@ const sections: SectionDef[] = [
   { icon: 'shield', title: 'Security preferences', subtitle: 'Signatures, sessions and approval controls', feature: 'chain' },
   { icon: 'settings', title: 'Connected identity', subtitle: 'Wallet identity and delegated access', feature: 'chain' },
   { icon: 'building', title: 'Organization profile', subtitle: 'Business details, address and industry', feature: 'onboarding' },
+  { icon: 'grid', title: 'Demo data', subtitle: 'Load or reset sample suppliers, agents, policies and invoices', feature: 'registry' },
 ]
 
 export function SettingsPage({ notify, onLogout }: { notify: (m: string) => void; onLogout: () => void }) {
   const [section, setSection] = useState('Engine status')
   const [confirmDisconnect, setConfirmDisconnect] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
   const [toggleStates, setToggleStates] = useState<Record<string, boolean>>({
     'approval-alerts': false,
     'blocked-alerts': false,
     'daily-digest': false,
   })
+  const [demoLoading, setDemoLoading] = useState(false)
   const setToggleState = (id: string, value: boolean) => setToggleStates((s) => ({ ...s, [id]: value }))
 
   const save = (e: FormEvent) => { e.preventDefault(); notify(`${section} updated successfully.`) }
+
+  const handleLoadDemoData = async () => {
+    setDemoLoading(true)
+    try {
+      await registryEngine.loadDemoData()
+      notify('Demo data loaded.')
+    } catch (err) {
+      if (err instanceof RegistryPortError) notify(`${err.code}: ${err.message}`)
+      else notify(String(err))
+    } finally { setDemoLoading(false) }
+  }
+
+  const handleResetDemoData = async () => {
+    setDemoLoading(true)
+    try {
+      await registryEngine.resetDemoData()
+      notify('Demo data reset.')
+    } catch (err) {
+      if (err instanceof RegistryPortError) notify(`${err.code}: ${err.message}`)
+      else notify(String(err))
+    } finally { setDemoLoading(false) }
+  }
 
   const isLive = (key: FeatureName) => FEATURES[key] === 'live'
   const active = sections.find((x) => x.title === section)
@@ -153,9 +180,37 @@ export function SettingsPage({ notify, onLogout }: { notify: (m: string) => void
                 </div>
               </form>
             )}
+            {section === 'Demo data' && (
+              <div className="settings-body-stack">
+                <div className="setting-row">
+                  <div className="setting-row-main">
+                    <b>Load demo data</b>
+                    <p>Create real supplier, agent, policy and invoice rows for this organization.</p>
+                  </div>
+                  <button className="btn secondary" onClick={handleLoadDemoData} disabled={demoLoading}>Load demo data</button>
+                </div>
+                <div className="setting-row">
+                  <div className="setting-row-main">
+                    <b>Reset demo data</b>
+                    <p>Delete all suppliers, agents, policies and invoices for this organization. Your organization and wallet are never removed.</p>
+                  </div>
+                  <button className="btn danger" onClick={() => setConfirmReset(true)} disabled={demoLoading}>Reset demo data</button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>
+      {confirmReset && (
+        <ConfirmDialog
+          title="Reset all demo data?"
+          description="This deletes every supplier, agent, policy and invoice for your organization. This cannot be undone."
+          confirmLabel="Reset demo data"
+          danger
+          onCancel={() => setConfirmReset(false)}
+          onConfirm={() => { setConfirmReset(false); handleResetDemoData() }}
+        />
+      )}
       {confirmDisconnect && (
         <ConfirmDialog
           title="Disconnect wallet?"

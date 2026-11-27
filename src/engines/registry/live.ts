@@ -386,11 +386,9 @@ export const liveRegistryEngine: RegistryEnginePort = {
       const path = `${invoice.orgId}/${invoice.id}/${Date.now()}-${safeName}`
       const { error: uploadError } = await (supabase as any).storage.from('invoice-documents').upload(path, file)
       if (uploadError) throwOnError(uploadError)
-      const { data: updated, error: updateError } = await from('invoices')
+      const { error: updateError } = await from('invoices')
         .update({ document_path: path })
         .eq('id', id)
-        .select()
-        .single()
       if (updateError) throwOnError(updateError)
       const row = await this.get(id)
       if (!row) throw new RegistryPortError('not_found', 'Invoice not found after document upload')
@@ -410,9 +408,12 @@ export const liveRegistryEngine: RegistryEnginePort = {
       return { url: signed, expiresIn: 3600 }
     },
   },
-}
-
-export async function loadDemoData(): Promise<void> {
-  const { error } = await rpc('load_demo_data', {})
-  if (error) throwOnError(error)
+  resetDemoData: async () => {
+    const { error } = await rpc('reset_demo_data', {})
+    if (error) throwOnError(error)
+  },
+  loadDemoData: async () => {
+    const { error } = await rpc('load_demo_data', {})
+    if (error) throwOnError(error)
+  },
 }
