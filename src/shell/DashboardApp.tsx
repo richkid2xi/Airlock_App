@@ -31,24 +31,13 @@ function WelcomePanel({ orgName, address }: { orgName: string; address: string |
       <div className="panel-head">
         <div>
           <h2>{orgName}</h2>
-          <p>Signed in with {shorten(address)} · Solana {clusterLabel()}</p>
+          <p>Signed in · Solana</p>
         </div>
         <Status>Live</Status>
       </div>
       <div className="settings-pane" style={{ padding: '8px 18px 18px' }}>
-        <h3 style={{ fontSize: 13, fontWeight: 650, marginBottom: 8 }}>Module status</h3>
-        <div className="control-list">
-          {FEATURE_LABELS.map(({ key, label }) => (
-            <div className="control-row" key={key}>
-              <span><Icon name="shield" /></span>
-              <div>
-                <b>{label}</b>
-                <p>{FEATURES[key] === 'live' ? 'Available now' : 'This module is being built. It is not showing sample data.'}</p>
-              </div>
-              <Status>{FEATURES[key] === 'live' ? 'Live' : 'In progress'}</Status>
-            </div>
-          ))}
-        </div>
+        <h3 style={{ fontSize: 13, fontWeight: 650, marginBottom: 8 }}>Ready to build</h3>
+        <p>Connect your wallet, configure payment settings, and start registering invoices.</p>
       </div>
     </div>
   )
@@ -88,7 +77,7 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
     <div className="app-shell">
       <Sidebar page={page} navigate={navigate} open={menuOpen} close={() => setMenuOpen(false)} approvalCount={0} />
       <div className="app-main">
-        <Topbar page={page} navigate={navigate} toggleMenu={() => setMenuOpen(true)} />
+        <Topbar page={page} navigate={navigate} toggleMenu={() => setMenuOpen(true)} onLogout={onLogout} />
         <main className="content">{content}</main>
       </div>
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}

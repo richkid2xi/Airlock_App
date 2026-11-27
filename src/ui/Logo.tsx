@@ -3,11 +3,12 @@ export function Logo({ compact = false }: { compact?: boolean }) {
     <div className="logo">
       <img
         src="/logo.png"
-        alt="Airlock"
+        alt=""
         width={compact ? 24 : 32}
         height={compact ? 24 : 32}
         style={{ display: 'block' }}
       />
+      {!compact && <b className="logo-text">AirLock</b>}
     </div>
   )
 }

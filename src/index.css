@@ -37,6 +37,7 @@
 
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .logo { display:flex; align-items:center; gap:10px; }
+.logo-text { font-size:17px; letter-spacing:.09em; font-weight:700; }
 .logo img { width:32px; height:32px; border-radius:8px; display:block; }
 .btn { min-height:42px; border-radius:var(--radius-sm); border:1px solid transparent; padding:0 17px; font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:9px; transition:.18s ease; }
 .btn:hover { transform:translateY(-1px); }

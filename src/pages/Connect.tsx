@@ -3,6 +3,7 @@ import { Icon } from '../ui/Icon'
 import { Logo } from '../ui/Logo'
 import { Toast } from '../ui/Toast'
 import { authEngine } from '../engines/auth'
+import { onboardingEngine } from '../engines/onboarding'
 import { useRoute } from '../router/useRoute'
 
 type WalletRow = { name: string; icon: string; readyState: string; installUrl?: string }
@@ -34,8 +35,16 @@ export function Connect({ onComplete }: { onComplete: (walletName?: string) => v
       setConnecting(walletName)
       try {
         await authEngine.connectAndSignIn(walletName)
-        setToast({ message: 'Account connected', tone: 'success' })
-        setTimeout(() => onComplete(walletName), 1200)
+        // Check if this user already completed onboarding
+        const state = await onboardingEngine.get()
+        const isOnboarded = state.completed || (state.step ?? 0) > 2
+        if (isOnboarded) {
+          // Skip onboarding for returning users
+          setTimeout(() => onComplete(walletName), 800)
+        } else {
+          setToast({ message: 'Account connected', tone: 'success' })
+          setTimeout(() => onComplete(walletName), 1200)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to connect wallet')
         setConnecting(null)
