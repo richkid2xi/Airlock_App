@@ -7,7 +7,7 @@ export type AuthSession = {
   publicKey: string;
   address: string;
   network: string;
-}
+};
 
 export interface AuthPort {
   /** Connect with a wallet. Returns the (mock or real) session identity. */
@@ -20,6 +20,14 @@ export interface AuthPort {
   signOut(): Promise<void>;
   /** Subscribe to wallet disconnect / account switch. */
   onChange(cb: (session: AuthSession | null) => void): () => void;
+  /** List installed / available wallets. */
+  list(): Promise<
+    Array<{
+      name: string;
+      icon: string;
+      readyState: "Installed" | "NotDetected" | "Loadable" | "Unsupported";
+    }>
+  >;
 }
 
 export interface WalletAccountLike {
