@@ -129,8 +129,8 @@
 .field .input-prefix input { border:0; border-radius:0; }
 .info-callout { display:flex; gap:12px; align-items:flex-start; padding:16px; border-radius:10px; background:var(--subtle); color:var(--brand-dark); margin-top:16px; }
 .info-callout p { color:var(--muted); line-height:1.5; font-size:12px; margin-top:3px; }
-.control-list { margin-top:28px; border:1px solid var(--line); border-radius:var(--radius-md); overflow:hidden; }
-.control-row { display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line-soft); }
+.control-list { margin-top:24px; border:1px solid var(--line); border-radius:var(--radius-md); overflow:hidden; }
+.control-row { display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line-soft); }
 .control-row:last-child { border:0; }
 .control-row > span { width:36px; height:36px; display:grid; place-items:center; border-radius:8px; background:var(--brand-light); color:var(--brand); }
 .control-row > svg { color:var(--green); }
@@ -139,8 +139,8 @@
 .complete-content .lead { margin:12px auto 20px; }
 .complete-mark { width:52px; height:52px; border-radius:50%; display:grid; place-items:center; color:white; background:var(--brand); margin:0 auto 18px; box-shadow:0 0 0 8px var(--brand-light); }
 .complete-content .step-kicker { margin-bottom:13px; }
-.summary-box { text-align:left; border:1px solid var(--line); border-radius:var(--radius-md); padding:8px 18px; }
-.summary-box div { padding:11px 0; border-bottom:1px solid var(--line-soft); display:flex; gap:10px; align-items:center; color:var(--ink-2); }
+.summary-box { text-align:left; border:1px solid var(--line); border-radius:var(--radius-md); padding:8px 16px; }
+.summary-box div { padding:10px 0; border-bottom:1px solid var(--line-soft); display:flex; gap:10px; align-items:center; color:var(--ink-2); }
 .summary-box div:last-child { border:0; }
 .summary-box svg { color:var(--green); }
 .aside-art { max-width:390px; width:100%; margin:0 auto 50px; }

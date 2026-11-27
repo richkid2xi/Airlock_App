@@ -8,12 +8,40 @@
 
 import type { OnboardingPort, OnboardingState } from './types'
 import { supabase } from '../../lib/supabase'
+import { decimalStringToBigInt } from '@airlock/shared/minorUnits'
+
+function mapDraftToDb(step: number, draft: Record<string, unknown>): Record<string, unknown> {
+  const db: Record<string, unknown> = {}
+
+  if (step === 0) {
+    // Organization step
+    if (draft.organizationName) db.name = draft.organizationName as string
+    if (draft.businessEmail) db.business_email = draft.businessEmail as string
+    if (draft.industry) db.industry = draft.industry as string
+    if (draft.size) db.size = draft.size as string
+  }
+
+  if (step === 1) {
+    // Payment setup step
+    if (draft.settlementCluster) db.settlement_cluster = draft.settlementCluster as string
+    if (draft.settlementAsset) db.settlement_asset = draft.settlementAsset as string
+    if (draft.reportingCurrency) db.reporting_currency = draft.reportingCurrency as string
+    if (draft.maxInvoiceAmount) {
+      try { db.max_invoice_minor = decimalStringToBigInt(String(draft.maxInvoiceAmount)) } catch {}
+    }
+    if (draft.approvalThreshold) {
+      try { db.approval_threshold_minor = decimalStringToBigInt(String(draft.approvalThreshold)) } catch {}
+    }
+  }
+
+  return db
+}
 
 export class LiveOnboardingEngine implements OnboardingPort {
   async get(): Promise<OnboardingState> {
     const { data, error } = await supabase
       .from('organizations')
-      .select('name, business_email, onboarding_step, onboarded_at')
+      .select('name, business_email, industry, size, settlement_cluster, settlement_asset, reporting_currency, max_invoice_minor, approval_threshold_minor, onboarding_step, onboarded_at')
       .maybeSingle()
     if (error) throw error
     if (!data) return { draft: {}, completed: false, step: 0 }
@@ -21,8 +49,15 @@ export class LiveOnboardingEngine implements OnboardingPort {
     const completed = row.onboarded_at != null
     const step = typeof row.onboarding_step === 'number' ? row.onboarding_step : 0
     const draft: Record<string, unknown> = {}
-    if (row.name != null) draft.name = row.name
-    if (row.business_email != null) draft.business_email = row.business_email
+    if (row.name != null) draft.organizationName = row.name
+    if (row.business_email != null) draft.businessEmail = row.business_email
+    if (row.industry != null) draft.industry = row.industry
+    if (row.size != null) draft.size = row.size
+    if (row.settlement_cluster != null) draft.settlementCluster = row.settlement_cluster
+    if (row.settlement_asset != null) draft.settlementAsset = row.settlement_asset
+    if (row.reporting_currency != null) draft.reportingCurrency = row.reporting_currency
+    if (row.max_invoice_minor != null) draft.maxInvoiceAmount = String(row.max_invoice_minor)
+    if (row.approval_threshold_minor != null) draft.approvalThreshold = String(row.approval_threshold_minor)
     return { draft, completed, step }
   }
 
@@ -38,8 +73,9 @@ export class LiveOnboardingEngine implements OnboardingPort {
     const { data: auth } = await supabase.auth.getUser()
     const ownerId = auth?.user?.id
 
+    const dbData = mapDraftToDb(step, data)
     const { error } = await (supabase.from('organizations') as any)
-      .update({ onboarding_step: nextStep, ...data })
+      .update({ onboarding_step: nextStep, ...dbData })
       .eq('owner_id', ownerId)
 
     if (error) throw error

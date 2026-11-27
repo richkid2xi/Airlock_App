@@ -13,6 +13,9 @@ type Draft = {
   businessEmail: string
   industry: string
   size: string
+  settlementCluster: string
+  settlementAsset: string
+  reportingCurrency: string
   maxInvoiceAmount: string
   approvalThreshold: string
 }
@@ -29,6 +32,9 @@ const EMPTY_DRAFT: Draft = {
   businessEmail: '',
   industry: '',
   size: '',
+  settlementCluster: '',
+  settlementAsset: '',
+  reportingCurrency: '',
   maxInvoiceAmount: '',
   approvalThreshold: '',
 }
@@ -149,6 +155,7 @@ export function Onboarding({ onComplete, startAt = 0, walletName }: { onComplete
       const e = validateStep2(draft)
       setErrors(e)
       if (e.maxInvoiceAmount || e.approvalThreshold) return
+      updateDraft({ settlementCluster: cluster, settlementAsset: 'USDC', reportingCurrency: 'USD' })
     }
     if (step === 3) {
       setCompleteState('loading')

@@ -14,7 +14,7 @@ export function useRoute() {
     (to: string, options?: boolean | { replace?: boolean; state?: unknown }) => {
       const replace = typeof options === 'boolean' ? options : Boolean(options?.replace)
       const state = typeof options === 'object' ? options?.state : undefined
-      routerNavigate(to, { replace, state: state !== undefined ? { state } : undefined })
+      routerNavigate(to, { replace, state })
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
