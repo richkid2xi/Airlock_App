@@ -78,7 +78,6 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
 
   const cluster = clusterLabel()
 
-  // Resume from saved draft/step on mount.
   useEffect(() => {
     let cancelled = false
     onboardingEngine.get().then((state) => {
@@ -91,16 +90,13 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
           setStep(state.step)
         }
       }
-    }).catch(() => {
-      // resume is best-effort; ignore engine errors
-    })
+    }).catch(() => {})
     return () => {
       cancelled = true
       if (autosaveTimer.current !== null) window.clearTimeout(autosaveTimer.current)
     }
   }, [])
 
-  // Autosave: debounce 800ms on draft change.
   useEffect(() => {
     if (autosaveTimer.current !== null) window.clearTimeout(autosaveTimer.current)
     autosaveTimer.current = window.setTimeout(() => {
@@ -165,11 +161,37 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
       <div className="step-kicker">Organization setup</div>
       <h2>Tell us about your organization</h2>
       <p className="lead">This helps us configure your payment environment and reporting.</p>
-      <div className="form-grid">
-        <label className={`field full${errors.organizationName ? ' invalid' : ''}`}>Organization name<input value={draft.organizationName} onChange={(e) => updateDraft({ organizationName: e.target.value })} onBlur={() => onBlurField('organizationName')} placeholder="Legal business name"/>{errors.organizationName && <span className="field-error">{errors.organizationName}</span>}</label>
-        <label className={`field full${errors.businessEmail ? ' invalid' : ''}`}>Business email<input value={draft.businessEmail} onChange={(e) => updateDraft({ businessEmail: e.target.value })} onBlur={() => onBlurField('businessEmail')} type="email"/>{errors.businessEmail && <span className="field-error">{errors.businessEmail}</span>}</label>
-        <label className="field">Industry<select value={draft.industry} onChange={(e) => updateDraft({ industry: e.target.value })}><option value="">Select…</option><option>Software</option><option>Financial services</option><option>Professional services</option><option>Retail</option></select></label>
-        <label className="field">Organization size<select value={draft.size} onChange={(e) => updateDraft({ size: e.target.value })}><option value="">Select…</option><option>1–10</option><option>11–50</option><option>51–200</option><option>201–1,000</option></select></label>
+      <div className="field-stack">
+        <label className={`field full${errors.organizationName ? ' invalid' : ''}`}>
+          Organization name
+          <input value={draft.organizationName} onChange={(e) => updateDraft({ organizationName: e.target.value })} onBlur={() => onBlurField('organizationName')} placeholder="Legal business name" />
+          {errors.organizationName && <span className="field-error">{errors.organizationName}</span>}
+        </label>
+        <label className={`field full${errors.businessEmail ? ' invalid' : ''}`}>
+          Business email
+          <input value={draft.businessEmail} onChange={(e) => updateDraft({ businessEmail: e.target.value })} onBlur={() => onBlurField('businessEmail')} type="email" placeholder="you@company.com" />
+          {errors.businessEmail && <span className="field-error">{errors.businessEmail}</span>}
+        </label>
+        <label className="field full">
+          Industry
+          <select value={draft.industry} onChange={(e) => updateDraft({ industry: e.target.value })}>
+            <option value="">Select…</option>
+            <option>Software</option>
+            <option>Financial services</option>
+            <option>Professional services</option>
+            <option>Retail</option>
+          </select>
+        </label>
+        <label className="field full">
+          Organization size
+          <select value={draft.size} onChange={(e) => updateDraft({ size: e.target.value })}>
+            <option value="">Select…</option>
+            <option>1–10</option>
+            <option>11–50</option>
+            <option>51–200</option>
+            <option>201–1,000</option>
+          </select>
+        </label>
       </div>
     </div>,
     <div className="form-content" key="payment">
@@ -177,13 +199,33 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
       <h2>Configure your payment environment</h2>
       <p className="lead">Set the default network and boundaries Airlock will enforce across agent-initiated requests.</p>
       <div className="form-grid">
-        <label className="field">Settlement network<div className="input-prefix"><span className="input-static">Solana · {cluster}</span></div><span className="field-note">Read-only · Solana network</span></label>
-        <label className="field">Reporting currency<div className="input-prefix"><span className="input-static">USDC</span></div><span className="field-note">Asset · USDC (6 decimals)</span></label>
-        <label className={`field${errors.maxInvoiceAmount ? ' invalid' : ''}`}>Maximum invoice amount<div className="input-prefix"><span>$</span><input value={draft.maxInvoiceAmount} onChange={(e) => updateDraft({ maxInvoiceAmount: e.target.value })} onBlur={() => onBlurField('maxInvoiceAmount')} inputMode="decimal"/></div><span className="field-note">Requests above this amount will be blocked.</span>{errors.maxInvoiceAmount && <span className="field-error">{errors.maxInvoiceAmount}</span>}</label>
-        <label className={`field${errors.approvalThreshold ? ' invalid' : ''}`}>Human approval threshold<div className="input-prefix"><span>$</span><input value={draft.approvalThreshold} onChange={(e) => updateDraft({ approvalThreshold: e.target.value })} onBlur={() => onBlurField('approvalThreshold')} inputMode="decimal"/></div><span className="field-note">Requests above this amount will be held.</span>{errors.approvalThreshold && <span className="field-error">{errors.approvalThreshold}</span>}</label>
+        <label className="field">
+          Settlement network
+          <div className="input-prefix"><span className="input-static">Solana · {cluster}</span></div>
+          <span className="field-note">Read-only · Solana network</span>
+        </label>
+        <label className="field">
+          Reporting currency
+          <div className="input-prefix"><span className="input-static">USDC</span></div>
+          <span className="field-note">Asset · USDC (6 decimals)</span>
+        </label>
+        <label className={`field${errors.maxInvoiceAmount ? ' invalid' : ''}`}>
+          Maximum invoice amount
+          <div className="input-prefix"><span>$</span><input value={draft.maxInvoiceAmount} onChange={(e) => updateDraft({ maxInvoiceAmount: e.target.value })} onBlur={() => onBlurField('maxInvoiceAmount')} inputMode="decimal" /></div>
+          <span className="field-note">Requests above this amount will be blocked.</span>
+          {errors.maxInvoiceAmount && <span className="field-error">{errors.maxInvoiceAmount}</span>}
+        </label>
+        <label className={`field${errors.approvalThreshold ? ' invalid' : ''}`}>
+          Human approval threshold
+          <div className="input-prefix"><span>$</span><input value={draft.approvalThreshold} onChange={(e) => updateDraft({ approvalThreshold: e.target.value })} onBlur={() => onBlurField('approvalThreshold')} inputMode="decimal" /></div>
+          <span className="field-note">Requests above this amount will be held.</span>
+          {errors.approvalThreshold && <span className="field-error">{errors.approvalThreshold}</span>}
+        </label>
       </div>
-        <div className="connected-strip">
-        <div className="wallet-identicon small">0x</div><div><b>Organization wallet</b><small>—</small></div><Status>Connected</Status>
+      <div className="connected-strip">
+        <div className="wallet-identicon small">0x</div>
+        <div><b>Organization wallet</b><small>—</small></div>
+        <Status>Connected</Status>
       </div>
     </div>,
     <div className="form-content" key="security">
@@ -192,16 +234,22 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
       <p className="lead">Every agent-initiated payment is checked against your registered records and control policies.</p>
       <div className="control-list">
         {[
-          ['invoice','Invoice-bound payments','Requests must match a registered invoice.'],
-          ['users','Verified supplier payouts','Funds only reach approved supplier wallets.'],
-          ['activity','Spending limits','Control per-request and daily payment value.'],
-          ['check','Delivery attestation','Require delivery confirmation before release.'],
-          ['shield','Human review','Route uncertain requests to an accountable reviewer.'],
-        ].map(([icon,title,text]) => <div className="control-row" key={title}><span><Icon name={icon as IconName}/></span><div><b>{title}</b><p>{text}</p></div><Icon name="check" size={16}/></div>)}
+          ['invoice', 'Invoice-bound payments', 'Requests must match a registered invoice.'],
+          ['users', 'Verified supplier payouts', 'Funds only reach approved supplier wallets.'],
+          ['activity', 'Spending limits', 'Control per-request and daily payment value.'],
+          ['check', 'Delivery attestation', 'Require delivery confirmation before release.'],
+          ['shield', 'Human review', 'Route uncertain requests to an accountable reviewer.'],
+        ].map(([icon, title, text]) => (
+          <div className="control-row" key={title}>
+            <span><Icon name={icon as IconName} /></span>
+            <div><b>{title}</b><p>{text}</p></div>
+            <Icon name="check" size={16} />
+          </div>
+        ))}
       </div>
     </div>,
     <div className="complete-content" key="complete">
-      <div className="complete-mark"><Icon name="check" size={28}/></div>
+      <div className="complete-mark"><Icon name="check" size={28} /></div>
       <div className="step-kicker">Setup complete</div>
       <h2>Your payment environment is ready.</h2>
       <p className="lead">{draft.organizationName || 'Your organization'} is protected by Airlock. You can now register invoices, verify suppliers and authorize AI agents.</p>
@@ -211,34 +259,48 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
           `Organization · ${draft.organizationName || '—'} · ${draft.businessEmail || '—'}`,
           `Settlement · Solana (${cluster}) · USDC`,
           `Max invoice · ${draft.maxInvoiceAmount || '—'} · Threshold · ${draft.approvalThreshold || '—'}`,
-        ].map(x => <div key={x}><Icon name="check" size={15}/><span>{x}</span></div>)}
+        ].map(x => <div key={x}><Icon name="check" size={15} /><span>{x}</span></div>)}
       </div>
       {completeState === 'error' && <div className="field-error" role="alert">{completeError}</div>}
       {completeState === 'loading' && <div className="field-note">Completing…</div>}
     </div>,
   ]
 
-  return <main className="onboarding">
-    <header className="onboarding-header"><Logo/><div className="secure-label"><Icon name="lock" size={15}/> Secure setup</div></header>
-    <div className="onboarding-layout">
-      <section className="onboarding-main">
-        <div className="progress-mobile">Step {step + 1} of 4 <span><i style={{width: `${(step + 1) / 4 * 100}%`}}/></span></div>
-        <div className="onboarding-content">{content[step]}</div>
-        {step > 0 && <div className="form-actions"><button className="btn quiet" onClick={() => setStep(step - 1)}>Back</button><button className="btn primary" onClick={goNext} disabled={step === 3 && completeState === 'loading'}>{step === 3 ? (completeState === 'loading' ? 'Completing…' : 'Go to dashboard') : 'Continue'} <Icon name="arrow"/></button></div>}
-      </section>
-      <aside className="onboarding-aside">
-        <div className="aside-art" aria-hidden="true">
-          <div className="flow-card invoice-flow"><Icon name="invoice"/><span><b>INV-2048</b><small>Registered invoice</small></span></div>
-          <div className="flow-line"><i/><i/><i/></div>
-          <div className="airlock-core"><span className="logo-mark"><span/><span/></span><div><b>AIRLOCK</b><small>5 controls passed</small></div></div>
-          <div className="flow-line"><i/><i/><i/></div>
-          <div className="flow-card approved-flow"><span className="status-symbol"><Icon name="check" size={15}/></span><span><b>Payment allowed</b><small>Bound to approved invoice</small></span></div>
-        </div>
-        <div className="progress-steps">
-          {steps.map((s, i) => <button key={s} disabled={i > maxSavedStep} className={`${i === step ? 'active' : ''} ${i < step ? 'done' : ''}`} onClick={() => setStep(i)}><span>{i < step ? <Icon name="check" size={13}/> : i + 1}</span><div><b>{s}</b><small>{i === step ? 'In progress' : i < step ? 'Complete' : 'Upcoming'}</small></div></button>)}
-        </div>
-        <p className="aside-trust"><Icon name="shield" size={15}/> Non-custodial access · Your keys stay in your wallet</p>
-      </aside>
+  const stepActions = (
+    <div className="form-actions">
+      {step > 0 && <button className="btn quiet" onClick={() => setStep(step - 1)}>Back</button>}
+      <button className="btn primary" onClick={goNext} disabled={step === 3 && completeState === 'loading'}>
+        {step === 3 ? (completeState === 'loading' ? 'Completing…' : 'Go to dashboard') : 'Continue'}
+        <Icon name="arrow" />
+      </button>
     </div>
-  </main>
+  )
+
+  return (
+    <main className="onboarding">
+      <div className="onboarding-card">
+        <Logo />
+        <div className="onboarding-body">
+          <div className="progress-steps">
+            {steps.map((s, i) => (
+              <button
+                key={s}
+                disabled={i > maxSavedStep}
+                className={`${i === step ? 'active' : ''} ${i < step ? 'done' : ''}`}
+                onClick={() => setStep(i)}
+              >
+                <span>{i < step ? <Icon name="check" size={13} /> : i + 1}</span>
+                <div>
+                  <b>{s}</b>
+                  <small>{i === step ? 'In progress' : i < step ? 'Complete' : 'Upcoming'}</small>
+                </div>
+              </button>
+            ))}
+          </div>
+          {content[step]}
+          {stepActions}
+        </div>
+      </div>
+    </main>
+  )
 }
