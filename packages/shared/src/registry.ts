@@ -1,6 +1,40 @@
 import { z } from 'zod'
 import { minorUnitsSchema, parseMinorUnits, formatMinorUnits } from './minorUnits'
 
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
+export function decodeBase58(input: string): Uint8Array {
+  if (input.length === 0) return new Uint8Array(0)
+  // Count leading '1' (zero) characters
+  let leadZeros = 0
+  while (leadZeros < input.length && input[leadZeros] === '1') leadZeros++
+  // Convert base58 to big integer
+  let value = BigInt(0)
+  for (let i = 0; i < input.length; i++) {
+    const charIndex = BASE58_ALPHABET.indexOf(input[i])
+    if (charIndex < 0) throw new Error('Invalid base58 character')
+    value = value * BigInt(58) + BigInt(charIndex)
+  }
+  // Convert big integer to byte array
+  let bytes = new Uint8Array(0)
+  while (value > 0n) {
+    const byte = Number(value & 0xffn)
+    bytes = new Uint8Array([byte, ...bytes])
+    value = value / BigInt(256n)
+  }
+  // Prepend leading zero bytes
+  return new Uint8Array([...new Array(leadZeros).fill(0), ...bytes])
+}
+
+export function validatePayoutWallet(value: string): boolean {
+  try {
+    const decoded = decodeBase58(value)
+    return decoded.length === 32
+  } catch {
+    return false
+  }
+}
+
 export const uuidSchema = z.string().uuid()
 export const base58WalletSchema = z.string().min(32).max(44)
 

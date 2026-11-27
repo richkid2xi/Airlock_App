@@ -26,6 +26,8 @@ import {
   makeRegistryError,
   SOLANA_DEVNET_USDC_MINT,
   USDC_DECIMALS,
+  decodeBase58,
+  validatePayoutWallet,
 } from './registry'
 
 describe('packages/shared registry types', () => {
@@ -51,6 +53,18 @@ describe('packages/shared registry types', () => {
     })
     it('rejects too long wallet', () => {
       expect(() => base58WalletSchema.parse('a'.repeat(45))).toThrow()
+    })
+  })
+
+  describe('base58 utilities', () => {
+    it('decodes valid base58 wallet', () => {
+      const decoded = decodeBase58(validWallet)
+      expect(decoded.length).toBe(32)
+    })
+    it('validates payout wallet length', () => {
+      expect(validatePayoutWallet(validWallet)).toBe(true)
+      expect(validatePayoutWallet('short')).toBe(false)
+      expect(validatePayoutWallet('a'.repeat(45))).toBe(false)
     })
   })
 

@@ -77,6 +77,7 @@ function mapInvoiceRow(row: any): Invoice {
     issueDate: row.issue_date,
     dueDate: row.due_date,
     documentRef: row.document_ref,
+    documentPath: row.document_path,
     notes: row.notes,
     status: row.status,
     attestedAt: row.attested_at,
