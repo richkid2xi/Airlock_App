@@ -1,2 +1,5 @@
 export * from './types'
-export * from './mock'
+import { liveRegistryEngine, loadDemoData } from './live'
+
+export { liveRegistryEngine, loadDemoData }
+export const registryEngine = liveRegistryEngine

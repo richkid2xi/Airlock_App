@@ -9,7 +9,7 @@
  * - Other errors rethrow.
  */
 
-import { engineRegistry, type EngineName } from './registry'
+import { engineRegistry, type EngineName } from './engineRegistry'
 
 export function isFatalAuthError(err: unknown): boolean {
   const e = err as { code?: string; status?: number; status_code?: number }

@@ -1,5 +1,5 @@
 import type { OnboardingPort, OnboardingState } from './types'
-import { engineRegistry } from '../registry'
+import { engineRegistry } from '../engineRegistry'
 import { mockOnboardingEngine } from './mock'
 import { LiveOnboardingEngine } from './live'
 import { withPolicyFallback } from '../fallbackPolicy'

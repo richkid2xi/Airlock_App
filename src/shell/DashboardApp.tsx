@@ -9,6 +9,10 @@ import { SettingsPage } from '../pages/SettingsPage'
 import { FEATURES, type FeatureName, FEATURE_LABELS } from '../config/features'
 import { authEngine } from '../engines/auth'
 import { onboardingEngine } from '../engines/onboarding'
+import { registryEngine } from '../engines/registry'
+import { Suppliers } from '../pages/Suppliers'
+import { Invoices } from '../pages/Invoices'
+import { Agents } from '../pages/Agents'
 
 function shorten(address: string | null): string {
   if (!address) return '—'
@@ -70,7 +74,9 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
 
   let content: ReactNode
   if (page === 'Dashboard') content = <FeatureGate feature="metrics"><WelcomePanel orgName={orgName} address={address} /></FeatureGate>
-  else if (page === 'Invoices' || page === 'Suppliers' || page === 'AI Agents') content = <FeatureGate feature="registry" />
+  else if (page === 'Suppliers') content = <FeatureGate feature="registry"><Suppliers notify={message => setToast({ message })} /></FeatureGate>
+  else if (page === 'Invoices') content = <FeatureGate feature="registry"><Invoices notify={message => setToast({ message })} /></FeatureGate>
+  else if (page === 'AI Agents') content = <FeatureGate feature="registry"><Agents notify={message => setToast({ message })} /></FeatureGate>
   else if (page === 'Policies' || page === 'Activity') content = <FeatureGate feature="requests" />
   else if (page === 'Approvals') content = <FeatureGate feature="approvals" />
   else if (page === 'Attack Lab') content = <FeatureGate feature="evaluation" />

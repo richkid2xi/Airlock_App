@@ -1,5 +1,5 @@
 import type { AuthPort, AuthSession } from "./types";
-import { engineRegistry } from "../registry";
+import { engineRegistry } from "../engineRegistry";
 import { mockAuthEngine } from "./mock";
 import { LiveAuthEngine, createLiveAuthEngine } from "./live";
 import { withPolicyFallback } from "../fallbackPolicy";

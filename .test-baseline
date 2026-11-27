@@ -1,4 +1,5 @@
 {
-  "totalTestsBaseline": 110,
-  "lastVerified": "2026-11-27"
+  "totalTestsBaseline": 77,
+  "lastVerified": "2026-11-27",
+  "notes": "Lowered by 33: deleted src/engines/registry/registry.contract.test.ts (subject mock.ts deleted per no-mock policy)"
 }

@@ -46,4 +46,4 @@ class MockOnboardingEngine implements OnboardingPort {
 }
 
 export const mockOnboardingEngine = new MockOnboardingEngine()
-export { engineRegistry } from '../registry'
+export { engineRegistry } from '../engineRegistry'

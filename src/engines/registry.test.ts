@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { engineRegistry, resolveEngine, withFallback } from './registry'
+import { engineRegistry, resolveEngine, withFallback } from './engineRegistry'
 
 describe('Engine Registry & Status Store', () => {
   it('registers all 8 engines with initial mock status', () => {

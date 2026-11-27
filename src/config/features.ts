@@ -19,7 +19,7 @@ export type FeatureState = 'live' | 'in_progress';
 export const FEATURES: Record<FeatureName, FeatureState> = {
   auth: 'live',
   onboarding: 'live',
-  registry: 'in_progress',
+  registry: 'live',
   evaluation: 'in_progress',
   requests: 'in_progress',
   approvals: 'in_progress',

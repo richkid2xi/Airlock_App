@@ -1,6 +1,6 @@
 import { AuthPort, AuthSession, WalletAccountLike } from "./types";
-import { engineRegistry } from "../registry";
-import { withFallback } from "../registry";
+import { engineRegistry } from "../engineRegistry";
+import { withFallback } from "../engineRegistry";
 
 const FIXED_ADDRESS = "0x71C4...9F2A";
 const FIXED_NETWORK = "Ethereum";
