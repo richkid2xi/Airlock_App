@@ -108,6 +108,7 @@
 - Search (name/email) + verification status filter.
 - Create/edit with base58 payout-wallet validation (`validatePayoutWallet`, 32-byte decode).
 - Verify via `verify_supplier` RPC; payout-wallet edit resets verification → UI shows reset notice.
+- Details modal: fields + payout wallet (full) + verification + notes + audit trail (verified at/by) + invoices sublist (per supplier).
 
 ### Invoices
 - Status filter + search by invoice number/supplier.

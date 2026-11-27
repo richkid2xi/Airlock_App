@@ -38,6 +38,12 @@
 ### 1.5 Empty state
 - [ ] If no suppliers exist → "No suppliers yet. Add your first supplier to get started."
 
+### 1.6 Supplier details
+- [ ] Click **Details** on any supplier row → detail modal opens
+- [ ] Shows: Name, Payout wallet (full), Business email, Category, Verification, Notes
+- [ ] Audit trail shows: Verified on `<date>` by `<wallet>` OR "Not yet verified"
+- [ ] Invoices sublist shows invoices for that supplier (or "No invoices for this supplier.")
+
 ---
 
 ## 2. Invoices
