@@ -103,6 +103,9 @@
 - 22c583c policies: full CRUD with search, detail modal, controls, agent assignment
 - 60f2bd5 agents: edit modal, limits controls, inline validation, assigned policies
 - 7e5db2a settings: demo data Load/Reset wired to registry engine
+- 238f150 shared: add evaluation vectors, evaluate request evaluator, pipeline steps, and migration 0005
+- 8c6ff4c feat: add dashboard metrics engine, migration 0006, flip metrics and evaluation to live
+- ae59ca8 feat: wire pipeline page and dashboard metrics into shell, verify pipeline script
 
 ### Suppliers
 - Search (name/email) + verification status filter.
@@ -141,6 +144,49 @@
 - Run `pnpm verify:registry` with `AIRLOCK_ACCESS_TOKEN` (and optionally `AIRLOCK_ACCESS_TOKEN_2`) plus `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` in `.env.local` against the hosted project.
 - Manual pass through docs/testing/registry.md (needs wallet + devnet session).
 - Confirm `load_demo_data` / `reset_demo_data` RPCs exist on the hosted project (0004 migration added reset_demo_data; load_demo_data must already exist from earlier migration).
+
+## PART 7: Metrics + Pipeline + Evaluation core (complete)
+
+### Commits
+- 238f150 shared: add evaluation vectors, evaluate request evaluator, pipeline steps, and migration 0005
+- 8c6ff4c feat: add dashboard metrics engine, migration 0006, flip metrics and evaluation to live
+- ae59ca8 feat: wire pipeline page and dashboard metrics into shell, verify pipeline script
+
+### Changes
+- `packages/shared/src/evaluateRequest.ts` + `.test.ts` (17 tests): pure evaluator with 12 rules (agent, invoice, committed, disputed, payee, amount, mint, over_limit, daily_cap, supplier_unverified, needs_attestation, needs_approval), bigint money, rule breakdown + snapshot, returns typed decision + reasonCode.
+- `packages/shared/src/pipeline.ts` + `.test.ts` (10 tests): pure derivePipeline() produces 7 pipeline steps (suppliers → invoices → agent-request → decision → approval → receipt → on-chain) with live/in_progress + status, no fabricated signatures.
+- `packages/golden/evaluationVectors.ts` + `docs/golden-vector-proposal.md` + `packages/golden/DRAFT.md`: 25 golden vectors (GV-001..GV-025) covering ALLOW/BLOCK/HOLD cases.
+- `supabase/migrations/0005_decision_engine.sql` (applied to remote): payment_requests, evaluations, evaluation_decisions, receipts, views (spent_today, committed_invoices), RPCs (evaluate_payment_request, approve_evaluation, reject_evaluation, issue_receipt, verify_receipt), RLS, triggers, demo data.
+- `supabase/migrations/0006_dashboard_metrics.sql` (applied to remote): `get_dashboard_metrics()` RPC returns JSONB with suppliers_by_status, invoice_counts_by_status, today_requests_by_decision, blocked_count, held_count, receipts_issued, amount_authorized_today_minor, daily_cap_minor, last_evaluations.
+- `src/engines/metrics/{types,live,index}.ts`: metrics engine using supabase-js, no fallback.
+- `src/pages/Pipeline.tsx`: renders derivePipeline() with live counts from registryEngine (suppliers/invoices) + metrics (requests/held/receipts via RPC); action buttons navigate to attack-lab/approvals/receipts/suppliers/invoices.
+- `src/pages/Dashboard.tsx`: rewired to fetch real metrics via metricsEngine.getMetrics(), render tiles from live data, load due-soon invoices, activity table from last_evaluations when requests live.
+- `src/shell/DashboardApp.tsx`: integrated Pipeline route (`/app/pipeline`) with content rendering; simplified away the inline metrics useEffect (now in Dashboard).
+- `src/shell/Sidebar.tsx`: added Pipeline nav item under OVERVIEW.
+- `src/shell/Routes.tsx`: added `/app/pipeline` route.
+- `src/config/features.ts`: `metrics: 'live'`, `evaluation: 'live'` (already live).
+- `scripts/verify/pipeline.ts`: env-presence verification script for pipeline slice.
+- Global modal/layout fix (registry slice): `src/index.css` + `src/ui/Modal.tsx` — inset padding, `max-h-[82vh]`, `flex flex-col`, `rounded-2xl`, hidden scrollbars (`scrollbar-none`), anchored header/footer; 2-col field grouping (`grid-cols-1 sm:grid-cols-2 gap-3`) on Suppliers/Invoices/Agents/Policies form modals.
+
+### Verification (run)
+- `npx tsc --noEmit` clean.
+- `npx vitest run` (root): 8 files / 46 tests pass.
+- `npx vitest run` (packages/shared): 6 files / 124 tests pass.
+- `npx vite build` succeeds.
+- Supabase: migration 0005 + 0006 applied to remote (tjzavfhghbjxchohkimo).
+
+### Needs Elikem
+- Run `pnpm verify:pipeline` (to be added to package.json) with `AIRLOCK_ACCESS_TOKEN` + `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` in `.env.local` against the hosted project.
+- Manual pass through `docs/testing/pipeline.md` (to be written).
+- Confirm dashboard metrics RPC works end-to-end via app.
+
+## PART 8: Approvals + Receipts slice (in progress)
+- [ ] Migration 0007: approve_evaluation / reject_evaluation RPCs, evaluation_decisions table, receipts, issue_receipt / verify_receipt RPCs.
+- [ ] Engines: `src/engines/approvals/{types,live,index}.ts`, `src/engines/receipts/{types,live,index}.ts`.
+- [ ] Pages: Approvals.tsx, Receipts.tsx.
+- [ ] Flip FEATURES.approvals to 'live'.
+- [ ] `scripts/verify/approvals.ts` + `pnpm verify:approvals`.
+- [ ] `docs/testing/approvals.md`.
 
 
 

@@ -10,7 +10,8 @@
     "test": "vitest run --reporter=json --outputFile=.test-results.json",
     "typecheck": "tsc --noEmit",
     "format": "oxfmt",
-    "verify:registry": "npx tsx scripts/verify/registry.ts"
+    "verify:registry": "npx tsx scripts/verify/registry.ts",
+    "verify:pipeline": "npx tsx scripts/verify/pipeline.ts"
   },
   "dependencies": {
     "@solana/wallet-adapter-base": "^0.9.28",
