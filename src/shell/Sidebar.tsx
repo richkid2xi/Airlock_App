@@ -2,7 +2,7 @@ import { Icon, type IconName } from '../ui/Icon'
 import { Logo } from '../ui/Logo'
 
 const nav = [
-  { group: 'OVERVIEW', items: [['Dashboard','grid']] },
+  { group: 'OVERVIEW', items: [['Dashboard','grid'],['Pipeline','trend']] },
   { group: 'PAYMENTS', items: [['Invoices','invoice'],['Suppliers','users'],['Activity','activity'],['Approvals','check']] },
   { group: 'CONTROL', items: [['AI Agents','bot'],['Policies','shield'],['Attack Lab','flask']] },
   { group: 'SYSTEM', items: [['Settings','settings']] },
@@ -10,6 +10,7 @@ const nav = [
 
 export const pageRoutes: Record<string, string> = {
   Dashboard: '/app',
+  Pipeline: '/app/pipeline',
   Invoices: '/app/invoices',
   Suppliers: '/app/suppliers',
   Activity: '/app/activity',

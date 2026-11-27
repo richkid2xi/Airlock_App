@@ -200,7 +200,7 @@ export function Policies({ path, navigate, notify }: { path: string; navigate: (
 
     {open && <Modal title="Create policy" description="Define spending limits and controls that agents must follow when initiating payments." onClose={() => setOpen(false)}>
       <form onSubmit={handleCreate}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
           <label className="field">Policy name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Standard spend policy"/></label>
           <label className="field">Description<textarea name="description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="Optional description"/></label>
           <label className="field">Max invoice (minor units)<input name="maxInvoiceMinor" type="number" min="1" required value={draft.maxInvoiceMinor} onChange={e => setDraft({ ...draft, maxInvoiceMinor: e.target.value })} placeholder="100000"/></label>
@@ -226,7 +226,7 @@ export function Policies({ path, navigate, notify }: { path: string; navigate: (
 
     {editId !== null && <Modal title="Edit policy" description="Update spending limits and controls." onClose={() => setEditId(null)}>
       <form onSubmit={handleEdit}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
           <label className="field">Policy name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Standard spend policy"/></label>
           <label className="field">Description<textarea name="description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="Optional description"/></label>
           <label className="field">Max invoice (minor units)<input name="maxInvoiceMinor" type="number" min="1" required value={draft.maxInvoiceMinor} onChange={e => setDraft({ ...draft, maxInvoiceMinor: e.target.value })} placeholder="100000"/></label>

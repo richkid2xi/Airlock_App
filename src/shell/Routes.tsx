@@ -29,6 +29,7 @@ function AppShellRoute() {
     'activity',
     'approvals',
     'attack-lab',
+    'pipeline',
     'settings',
   ]
   const topSegment = subpath.split('/')[0]

@@ -191,7 +191,7 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
 
     {open && <Modal title="Register invoice" description="Create a new invoice record linked to a verified supplier. Amounts are in minor units (e.g. USDC = 6 decimals)." onClose={() => setOpen(false)}>
       <form onSubmit={handleCreate}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
           <label className="field">Invoice number<input name="invoiceNumber" required value={draft.invoiceNumber} onChange={e => setDraft({ ...draft, invoiceNumber: e.target.value })} placeholder="INV-2024-001" /></label>
           <label className="field">Supplier<select name="supplierId" required value={draft.supplierId} onChange={e => setDraft({ ...draft, supplierId: e.target.value })}>
             <option value="">Select a supplier</option>

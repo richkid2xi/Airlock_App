@@ -196,7 +196,7 @@ export function Agents({ notify }: { notify: (m: string) => void }) {
 
     {open && <Modal title="Create AI agent" description="Set spending limits and assign payment policies. Limits are in minor units (USDC = 6 decimals)." onClose={() => { setOpen(false); setDraft({ name: '', identifier: '', description: '', status: 'active', perRequestLimitMinor: '', dailyLimitMinor: '', currency: 'USDC', policyIds: [] }); setLimitErrors({}) }}>
       <form onSubmit={handleCreate}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
           <label className="field">Agent name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="AP Specialist Agent" /></label>
           <label className="field">Identifier<input name="identifier" required value={draft.identifier} onChange={e => setDraft({ ...draft, identifier: e.target.value })} placeholder="ap-specialist-01" /></label>
           <label className="field.full" style={{ gridColumn: 'span 2' }}>Description<textarea name="description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="What this agent is authorized to do" /></label>
@@ -215,7 +215,7 @@ export function Agents({ notify }: { notify: (m: string) => void }) {
 
     {editId !== null && <Modal title="Edit AI agent" description="Update agent details and spending limits." onClose={() => { setEditId(null); setDraft({ name: '', identifier: '', description: '', status: 'active', perRequestLimitMinor: '', dailyLimitMinor: '', currency: 'USDC', policyIds: [] }); setLimitErrors({}) }}>
       <form onSubmit={handleEdit}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
           <label className="field">Agent name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="AP Specialist Agent" /></label>
           <label className="field">Identifier<code style={{ display: 'block', fontSize: 11, marginTop: 4, color: '#6b7280' }}>{draft.identifier}</code></label>
           <label className="field.full" style={{ gridColumn: 'span 2' }}>Description<textarea name="description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="What this agent is authorized to do" /></label>
