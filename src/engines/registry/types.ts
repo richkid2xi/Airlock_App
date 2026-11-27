@@ -60,6 +60,8 @@ export type RegistryEnginePort = {
     create(input: CreateInvoiceInput): Promise<Invoice>
     attest(id: string): Promise<Invoice>
     dispute(id: string): Promise<Invoice>
+    uploadDocument(id: string, file: File): Promise<Invoice>
+    getDocumentUrl(id: string): Promise<{ url: string; expiresIn: number }>
   }
 }
 

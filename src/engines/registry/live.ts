@@ -378,6 +378,37 @@ export const liveRegistryEngine: RegistryEnginePort = {
       if (!row) throw new RegistryPortError('not_found', 'Invoice not found after dispute')
       return row
     },
+
+    async uploadDocument(id: string, file: File): Promise<Invoice> {
+      const invoice = await this.get(id)
+      if (!invoice) throw new RegistryPortError('not_found', 'Invoice not found')
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `${invoice.orgId}/${invoice.id}/${Date.now()}-${safeName}`
+      const { error: uploadError } = await (supabase as any).storage.from('invoice-documents').upload(path, file)
+      if (uploadError) throwOnError(uploadError)
+      const { data: updated, error: updateError } = await from('invoices')
+        .update({ document_path: path })
+        .eq('id', id)
+        .select()
+        .single()
+      if (updateError) throwOnError(updateError)
+      const row = await this.get(id)
+      if (!row) throw new RegistryPortError('not_found', 'Invoice not found after document upload')
+      return row
+    },
+
+    async getDocumentUrl(id: string): Promise<{ url: string; expiresIn: number }> {
+      const invoice = await this.get(id)
+      if (!invoice) throw new RegistryPortError('not_found', 'Invoice not found')
+      if (!invoice.documentPath) {
+        throw new RegistryPortError('not_found', 'Invoice has no document uploaded')
+      }
+      const { data, error } = await (supabase as any).storage.from('invoice-documents').createSignedUrl(invoice.documentPath, 3600, {})
+      if (error) throwOnError(error)
+      const signed = data?.signedUrl as string | undefined
+      if (!signed) throw new RegistryPortError('not_found', 'Document signed URL unavailable')
+      return { url: signed, expiresIn: 3600 }
+    },
   },
 }
 
