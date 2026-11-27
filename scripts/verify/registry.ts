@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { exit } from 'node:process'
 
 type CheckStatus = 'PASS' | 'FAIL' | 'SKIPPED'
 
@@ -72,7 +73,7 @@ function main() {
   }
   console.log(`SUMMARY: ${passed} passed, ${failed} failed, ${skipped} skipped`)
 
-  process.exit(failed > 0 ? 1 : 0)
+  exit(failed > 0 ? 1 : 0)
 }
 
 main()
