@@ -44,17 +44,16 @@ export function Dashboard({ setPage, metrics }: { setPage: (p: string) => void; 
   const metricsLoading = metrics?.loading ?? false
 
   const paidCount = metricsData?.paidCount ?? 0
-  const openCount = metricsData?.openCount ?? 0
   const totalInvoices = metricsData?.totalInvoices ?? 0
   const dueSoon = metricsData?.dueSoon ?? []
 
   return <>
     <div className="welcome-row"><div><div className="date-label"></div><h1>Dashboard</h1><p>Here's what's happening across your payment environment.</p></div><button className="btn secondary" onClick={() => setPage('/app/attack-lab')}><Icon name="flask"/> Run security test</button></div>
     <div className="metrics-grid">
-      <Metric icon="shield" label="Funds protected" value="0" note="Blocked or held by policy" />
+      <Metric icon="shield" label="Funds protected" value="--" note="Blocked or held by policy" />
       <Metric icon="invoice" label="Invoices paid" value={metricsLoading ? '--' : String(paidCount)} note={metricsLoading ? 'Loading…' : `${paidCount} of ${totalInvoices} registered invoices`} accent="green"/>
-      <Metric icon="lock" label="Blocked payments" value="0" note="In the last 30 days" accent="red" />
-      <Metric icon="clock" label="Awaiting review" value={metricsLoading ? '--' : String(openCount)} note={metricsLoading ? 'Loading…' : 'Human decision required'} accent="amber"/>
+      <Metric icon="lock" label="Blocked payments" value="--" note="In the last 30 days" accent="red" />
+      <Metric icon="clock" label="Awaiting review" value="--" note="Human decision required" accent="amber"/>
     </div>
     <div className="dashboard-grid">
       <section className="panel activity-panel">
