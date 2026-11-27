@@ -11,12 +11,13 @@ import { Policies } from '../pages/Policies'
 import { SettingsPage } from '../pages/SettingsPage'
 import { ActivityPage } from '../pages/ActivityPage'
 import { Pipeline } from '../pages/Pipeline'
+import { Receipts } from '../pages/Receipts'
 
 export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => void; path: string; navigate: (p: string) => void }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [toast, setToast] = useState<{ message: string; tone?: 'success' | 'error' } | null>(null)
 
-  const page = path.startsWith('/app/invoices') ? 'Invoices' : path.startsWith('/app/suppliers') ? 'Suppliers' : path.startsWith('/app/agents') ? 'AI Agents' : path.startsWith('/app/policies') ? 'Policies' : path.startsWith('/app/activity') ? 'Activity' : path.startsWith('/app/approvals') ? 'Approvals' : path.startsWith('/app/attack-lab') ? 'Attack Lab' : path.startsWith('/app/pipeline') ? 'Pipeline' : path.startsWith('/app/settings') ? 'Settings' : 'Dashboard'
+  const page = path.startsWith('/app/invoices') ? 'Invoices' : path.startsWith('/app/suppliers') ? 'Suppliers' : path.startsWith('/app/agents') ? 'AI Agents' : path.startsWith('/app/policies') ? 'Policies' : path.startsWith('/app/activity') ? 'Activity' : path.startsWith('/app/approvals') ? 'Approvals' : path.startsWith('/app/attack-lab') ? 'Attack Lab' : path.startsWith('/app/pipeline') ? 'Pipeline' : path.startsWith('/app/receipts') ? 'Receipts' : path.startsWith('/app/settings') ? 'Settings' : 'Dashboard'
 
   let content: ReactNode
   if (page === 'Dashboard') content = <Dashboard setPage={navigate} />
@@ -28,6 +29,7 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
   else if (page === 'Approvals') content = <ActivityPage approvals={true} rows={[]} path={path} navigate={navigate} agents={[]} onDecision={() => {}} notify={message => setToast({ message })} />
   else if (page === 'Attack Lab') content = <AttackLab notify={message => setToast({ message })} />
   else if (page === 'Pipeline') content = <Pipeline navigate={navigate} />
+  else if (page === 'Receipts') content = <Receipts notify={message => setToast({ message })} />
   else content = <SettingsPage notify={message => setToast({ message })} onLogout={onLogout} />
 
   return (

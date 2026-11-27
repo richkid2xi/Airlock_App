@@ -3,7 +3,7 @@ import { Logo } from '../ui/Logo'
 
 const nav = [
   { group: 'OVERVIEW', items: [['Dashboard','grid'],['Pipeline','trend']] },
-  { group: 'PAYMENTS', items: [['Invoices','invoice'],['Suppliers','users'],['Activity','activity'],['Approvals','check']] },
+  { group: 'PAYMENTS', items: [['Invoices','invoice'],['Suppliers','users'],['Activity','activity'],['Approvals','check'],['Receipts','receipt']] },
   { group: 'CONTROL', items: [['AI Agents','bot'],['Policies','shield'],['Attack Lab','flask']] },
   { group: 'SYSTEM', items: [['Settings','settings']] },
 ] as const
@@ -15,6 +15,7 @@ export const pageRoutes: Record<string, string> = {
   Suppliers: '/app/suppliers',
   Activity: '/app/activity',
   Approvals: '/app/approvals',
+  Receipts: '/app/receipts',
   'AI Agents': '/app/agents',
   Policies: '/app/policies',
   'Attack Lab': '/app/attack-lab',
