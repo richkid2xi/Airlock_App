@@ -349,7 +349,6 @@ describe('packages/shared registry types', () => {
       orgId: validUuid,
       invoiceNumber: 'INV-001',
       supplierId: validUuid,
-      payeeWallet: validWallet,
       amountMinor: validMinorUnits,
       currency: 'USDC' as const,
       mint: SOLANA_DEVNET_USDC_MINT,
@@ -367,6 +366,12 @@ describe('packages/shared registry types', () => {
       const result = InvoiceSchema.parse(validInvoice)
       expect(result.invoiceNumber).toBe('INV-001')
     })
+    it('accepts optional documentPath', () => {
+      const withDoc = InvoiceSchema.parse({ ...validInvoice, documentPath: 'org/inv/file.pdf' })
+      expect(withDoc.documentPath).toBe('org/inv/file.pdf')
+      const withoutDoc = InvoiceSchema.parse(validInvoice)
+      expect(withoutDoc.documentPath ?? null).toBeNull()
+    })
     it('rejects dueDate before issueDate', () => {
       expect(() => InvoiceSchema.parse({ ...validInvoice, dueDate: '2026-01-10' })).toThrow()
     })
@@ -380,7 +385,6 @@ describe('packages/shared registry types', () => {
       const input = {
         invoiceNumber: 'INV-002',
         supplierId: validUuid,
-        payeeWallet: validWallet,
         amountMinor: validMinorUnits,
         currency: 'USDC' as const,
         mint: SOLANA_DEVNET_USDC_MINT,
@@ -394,14 +398,12 @@ describe('packages/shared registry types', () => {
     })
     it('rejects amountMinor <= 0', () => {
       expect(() => CreateInvoiceInputSchema.parse({
-        invoiceNumber: 'INV', supplierId: validUuid, payeeWallet: validWallet,
-        amountMinor: '0', currency: 'USDC', issueDate: '2026-01-15', dueDate: '2026-02-15',
+        invoiceNumber: 'INV', supplierId: validUuid, amountMinor: '0', currency: 'USDC', issueDate: '2026-01-15', dueDate: '2026-02-15',
       })).toThrow()
     })
     it('rejects dueDate before issueDate', () => {
       expect(() => CreateInvoiceInputSchema.parse({
-        invoiceNumber: 'INV', supplierId: validUuid, payeeWallet: validWallet,
-        amountMinor: '1000', currency: 'USDC', issueDate: '2026-01-15', dueDate: '2026-01-10',
+        invoiceNumber: 'INV', supplierId: validUuid, amountMinor: '1000', currency: 'USDC', issueDate: '2026-01-15', dueDate: '2026-01-10',
       })).toThrow()
     })
   })

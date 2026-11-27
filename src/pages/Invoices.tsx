@@ -12,8 +12,8 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState<{ invoiceNumber: string; supplierId: string; payeeWallet: string; amountMinor: string; currency: string; mint: string; issueDate: string; dueDate: string; documentRef: string; notes: string }>({
-    invoiceNumber: '', supplierId: '', payeeWallet: '', amountMinor: '', currency: 'USDC', mint: '', issueDate: '', dueDate: '', documentRef: '', notes: ''
+  const [draft, setDraft] = useState<{ invoiceNumber: string; supplierId: string; amountMinor: string; currency: string; mint: string; issueDate: string; dueDate: string; documentRef: string; notes: string }>({
+    invoiceNumber: '', supplierId: '', amountMinor: '', currency: 'USDC', mint: '', issueDate: '', dueDate: '', documentRef: '', notes: ''
   })
 
   const load = useCallback(async () => {
@@ -46,7 +46,6 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
       const created = await registryEngine.invoices.create({
         invoiceNumber: String(d.invoiceNumber),
         supplierId: String(d.supplierId),
-        payeeWallet: String(d.payeeWallet),
         amountMinor: String(d.amountMinor),
         currency: String(d.currency) as any,
         mint: String(d.mint) || undefined,
@@ -57,7 +56,7 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
       })
       setInvoices(prev => prev === null ? [created] : [created, ...prev])
       setOpen(false)
-      setDraft({ invoiceNumber: '', supplierId: '', payeeWallet: '', amountMinor: '', currency: 'USDC', mint: '', issueDate: '', dueDate: '', documentRef: '', notes: '' })
+      setDraft({ invoiceNumber: '', supplierId: '', amountMinor: '', currency: 'USDC', mint: '', issueDate: '', dueDate: '', documentRef: '', notes: '' })
       notify(`Invoice ${created.invoiceNumber} registered`)
     } catch (err) {
       if (err instanceof RegistryPortError) {
@@ -152,7 +151,6 @@ export function Invoices({ notify }: { notify: (m: string) => void }) {
             <option value="">Select a supplier</option>
             {suppliers?.map((s: Supplier) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select></label>
-          <label className="field full">Payee wallet (Solana)<input name="payeeWallet" required value={draft.payeeWallet} onChange={e => setDraft({ ...draft, payeeWallet: e.target.value })} placeholder="4Nd1mBQtrMJVYVfKf2PJy9NZUZdTAsp7D4xWLs4gDB4T"/></label>
           <label className="field full">Amount (minor units)<input name="amountMinor" type="number" min="1" required value={draft.amountMinor} onChange={e => setDraft({ ...draft, amountMinor: e.target.value })} placeholder="1000000"/></label>
           <label className="field full">Currency<select name="currency" value={draft.currency} onChange={e => setDraft({ ...draft, currency: e.target.value })}>
             <option>USDC</option><option>EUR</option><option>USD</option><option>GBP</option>

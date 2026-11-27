@@ -57,3 +57,42 @@
 - Main scroll container: DashboardApp `<main className="content scrollbar-none">` hides the page scrollbar while keeping scroll.
 - Verified by running: tsc --noEmit (clean), vitest run (8 files / 46 tests pass), vite build (succeeds)
 - Needs Elikem: none
+
+## PART 5: Dashboard real invoice metrics (uncommitted)
+
+- src/shell/DashboardApp.tsx: added useEffect to load invoices + suppliers from registryEngine on mount via supabase; compute paidCount/totalInvoices/dueSoon summary
+- src/pages/Dashboard.tsx: rewired to accept metrics prop from engine; render real paidCount/totalInvoices from DB; dueSoon list from open invoices due within 14 days; decision-based metrics (blocked/awaiting review) show -- as data not live yet
+- Payment activity/security/events remain InProgress (requests feature = in_progress, no hardcoded mock data)
+- Verified: npx tsc --noEmit (clean), npx vitest run 8 files / 46 tests pass, npx vite build succeeds
+- Needs Elikem: none
+
+## AUDIT (SUPPLIERS / INVOICES / POLICIES / AGENTS slice)
+
+### Suppliers
+- Works against real DB: `registryEngine.suppliers.list()`, `verify(id)` RPC (returns verified row).
+- Hard-coded/mock: none in current list.
+- Missing: status filter (unverified/review_required/verified), search, detail page, edit form, audit line ("verified by wallet on date"), supplier invoices list.
+- Reset notice: payout wallet change resets verification to review_required (DB trigger) but UI does not show it.
+
+### Invoices
+- Works against real DB: list(filter), create(), attest(), dispute(), get(); supplier picker uses real suppliers.
+- Broken: client sends payeeWallet; DB trigger should snapshot it. Amount entered raw minor units, not decimal->minorUnits helper.
+- Missing: status filter UI, search by number, detail page (supplier link, status timeline, actions), document upload/replace/open via signed URL.
+- Invoice documents: no bucket, no document_path column, no storage RLS.
+
+### Policies
+- Not wired to DB: `Policies.tsx` receives positional `PolicyRecord[]` + gated InProgress with hardcoded arrays.
+- Missing: real list/detail/create/edit, five controls, agent assignment via policy_agents.
+
+### Agents
+- Works against real DB: list(), create(), setStatus(), policies.list().
+- Missing: edit, inline limit validation (positive, daily >= per-request), unique identifier inline error, assigned policies display.
+
+### Legacy
+- DataWorkspace.tsx, EntityDetail.tsx, CreationForm.tsx are unused dead code.
+
+### Feature gates
+- FEATURES.policies = in_progress (others per config/features.ts).
+
+
+

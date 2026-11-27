@@ -71,7 +71,6 @@ function mapInvoiceRow(row: any): Invoice {
     orgId: row.org_id,
     invoiceNumber: row.invoice_number,
     supplierId: row.supplier_id,
-    payeeWallet: row.payee_wallet,
     amountMinor: row.amount_minor,
     currency: row.currency,
     mint: row.mint,
