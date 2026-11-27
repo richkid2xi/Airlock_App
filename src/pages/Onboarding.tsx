@@ -164,10 +164,9 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
 
   const connectWallet = () => {
     setConnecting(true)
-    window.setTimeout(() => {
-      setConnecting(false)
-      setWalletConnected(true)
-    }, 650)
+    setWalletConnected(true)
+    onWalletConnected?.()
+    goNext()
   }
 
   const content: ReactNode[] = [
@@ -185,7 +184,7 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
       </> : <>
         <div className="connected-identity">
           <div className="wallet-identicon">0x</div>
-          <div><span className="connection-status"><i/> Wallet connected</span><b>0x71C4...9F2A</b><small>Ethereum · Network verified</small></div>
+          <div><span className="connection-status"><i/> Wallet connected</span><b>—</b><small>Ethereum · Network verified</small></div>
           <button className="btn quiet" onClick={() => setWalletConnected(false)}>Disconnect</button>
         </div>
         <button className="btn primary wallet-continue" onClick={() => { onWalletConnected?.(); goNext() }}>Continue with this wallet <Icon name="arrow"/></button>
@@ -212,8 +211,8 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
         <label className={`field${errors.maxInvoiceAmount ? ' invalid' : ''}`}>Maximum invoice amount<div className="input-prefix"><span>$</span><input value={draft.maxInvoiceAmount} onChange={(e) => updateDraft({ maxInvoiceAmount: e.target.value })} onBlur={() => onBlurField('maxInvoiceAmount')} inputMode="decimal"/></div><span className="field-note">Requests above this amount will be blocked.</span>{errors.maxInvoiceAmount && <span className="field-error">{errors.maxInvoiceAmount}</span>}</label>
         <label className={`field${errors.approvalThreshold ? ' invalid' : ''}`}>Human approval threshold<div className="input-prefix"><span>$</span><input value={draft.approvalThreshold} onChange={(e) => updateDraft({ approvalThreshold: e.target.value })} onBlur={() => onBlurField('approvalThreshold')} inputMode="decimal"/></div><span className="field-note">Requests above this amount will be held.</span>{errors.approvalThreshold && <span className="field-error">{errors.approvalThreshold}</span>}</label>
       </div>
-      <div className="connected-strip">
-        <div className="wallet-identicon small">0x</div><div><b>Organization wallet</b><small>0x71C4...9F2A</small></div><Status>Connected</Status>
+        <div className="connected-strip">
+        <div className="wallet-identicon small">0x</div><div><b>Organization wallet</b><small>—</small></div><Status>Connected</Status>
       </div>
     </div>,
     <div className="form-content" key="security">
@@ -237,7 +236,7 @@ export function Onboarding({ onComplete, startAt = 0, onWalletConnected }: { onC
       <p className="lead">{draft.organizationName || 'Your organization'} is protected by Airlock. You can now register invoices, verify suppliers and authorize AI agents.</p>
       <div className="summary-box">
         {[
-          `Wallet identity verified · 0x71C4...9F2A`,
+          `Wallet identity verified · —`,
           `Organization · ${draft.organizationName || '—'} · ${draft.businessEmail || '—'}`,
           `Settlement · Solana (${cluster}) · USDC`,
           `Max invoice · ${draft.maxInvoiceAmount || '—'} · Threshold · ${draft.approvalThreshold || '—'}`,

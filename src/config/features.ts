@@ -10,6 +10,7 @@ export type FeatureName =
   | 'registry'
   | 'evaluation'
   | 'requests'
+  | 'policies'
   | 'approvals'
   | 'chain'
   | 'metrics';
@@ -22,6 +23,7 @@ export const FEATURES: Record<FeatureName, FeatureState> = {
   registry: 'live',
   evaluation: 'live',
   requests: 'in_progress',
+  policies: 'in_progress',
   approvals: 'in_progress',
   chain: 'in_progress',
   metrics: 'in_progress',
@@ -41,6 +43,7 @@ export const FEATURE_LABELS: Array<{ key: FeatureName; label: string }> = [
   { key: 'registry', label: 'Invoices & Suppliers' },
   { key: 'evaluation', label: 'Evaluation & Attack Lab' },
   { key: 'requests', label: 'Payment requests & Activity' },
+  { key: 'policies', label: 'Payment policies' },
   { key: 'approvals', label: 'Approvals' },
   { key: 'chain', label: 'On-chain settlement' },
   { key: 'metrics', label: 'Dashboard metrics' },

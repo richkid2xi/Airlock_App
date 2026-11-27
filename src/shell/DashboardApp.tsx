@@ -78,7 +78,8 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
   else if (page === 'Suppliers') content = <FeatureGate feature="registry"><Suppliers notify={message => setToast({ message })} /></FeatureGate>
   else if (page === 'Invoices') content = <FeatureGate feature="registry"><Invoices notify={message => setToast({ message })} /></FeatureGate>
   else if (page === 'AI Agents') content = <FeatureGate feature="registry"><Agents notify={message => setToast({ message })} /></FeatureGate>
-  else if (page === 'Policies' || page === 'Activity') content = <FeatureGate feature="requests" />
+  else if (page === 'Policies') content = <FeatureGate feature="policies" />
+  else if (page === 'Activity') content = <FeatureGate feature="requests" />
   else if (page === 'Approvals') content = <FeatureGate feature="approvals" />
   else if (page === 'Attack Lab') content = <FeatureGate feature="evaluation"><AttackLab notify={message => setToast({ message })} /></FeatureGate>
   else content = <SettingsPage notify={message => setToast({ message })} onLogout={onLogout} />
