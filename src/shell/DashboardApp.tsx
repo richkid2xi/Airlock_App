@@ -87,7 +87,7 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
   else if (page === 'Suppliers') content = <Suppliers notify={message => setToast({ message })} />
   else if (page === 'Invoices') content = <Invoices notify={message => setToast({ message })} />
   else if (page === 'AI Agents') content = <Agents notify={message => setToast({ message })} />
-  else if (page === 'Policies') content = <Policies policies={[]} setPolicies={() => {}} agents={[]} path={path} navigate={navigate} notify={message => setToast({ message })} />
+  else if (page === 'Policies') content = <Policies path={path} navigate={navigate} notify={message => setToast({ message })} />
   else if (page === 'Activity') content = <ActivityPage approvals={false} rows={[]} path={path} navigate={navigate} agents={[]} onDecision={() => {}} notify={message => setToast({ message })} />
   else if (page === 'Approvals') content = <ActivityPage approvals={true} rows={[]} path={path} navigate={navigate} agents={[]} onDecision={() => {}} notify={message => setToast({ message })} />
   else if (page === 'Attack Lab') content = <AttackLab notify={message => setToast({ message })} />
