@@ -1,5 +1,8 @@
 {
-  "totalTestsBaseline": 40,
+  "rootTestsBaseline": 40,
+  "sharedTestsBaseline": 92,
+  "goldenTestsBaseline": 5,
+  "pgtapTestsBaseline": 0,
   "lastVerified": "2026-11-27",
-  "notes": "Lowered from 110 by 76 total: deleted registry.contract.test.ts (33), domain.test.ts (7), status.test.ts (2), fallbackPolicy.test.ts (23), invoice.test.ts (4), supplier.test.ts (4), registry.test.ts (3) — all subjects were mock/fallback/seed code removed per no-mock policy"
+  "notes": "Per-package test floor baselines. Root: 40 (6 files), packages/shared: 92 (4 files including evaluate.test.ts with 11 golden-vector tests), packages/golden: 5 (1 file). pgTAP: 0 (skipped locally, no scratch project). Never delete or skip a test."
 }

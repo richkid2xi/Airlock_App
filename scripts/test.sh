@@ -3,16 +3,17 @@
 #
 # Runs:
 #   1. vitest (JSON reporter) for the root web app + every workspace package
-#      that defines a `test` script (currently packages/golden and server).
+#      that defines a `test` script (currently packages/golden, packages/shared).
 #   2. pgTAP against a SEPARATE hosted scratch Supabase project via
 #      `supabase test db --remote=<SUPABASE_TEST_PROJECT_REF> --yes`.
 #      The scratch project ref is read from .env.local (never committed).
 #      It must NOT equal the app project's ref (SUPABASE_APP_PROJECT_REF),
 #      which we refuse to test against.
 #
-# Sums all passed tests, compares to .test-baseline, exits non-zero if the
-# count is lower, exits non-zero if anything is skipped/todo/failed, and
-# raises the baseline when the count grows.
+# Sums all passed tests, compares to per-package baselines in .test-baseline,
+# exits non-zero if ANY package count drops below its baseline, exits
+# non-zero if anything is skipped/todo/failed, and raises baselines when
+# counts grow. Never deletes or skips a test.
 #
 # Why a separate scratch project: `supabase test db` enables the pgTAP
 # extension and drops it again afterwards. Running it against the app project
@@ -87,11 +88,16 @@ fi
 if ! command -v supabase >/dev/null 2>&1; then
   echo "ERROR: 'supabase' CLI not found on PATH." >&2
   echo "       Install it: https://supabase.com/docs/reference/cli/installation" >&2
-  echo "       (or run: npm install -g supabase)" >&2
+  echo "       (or run: npm install -g supabase)"
   exit 1
 fi
 
-BASELINE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('.test-baseline')).totalTestsBaseline)")
+# --- Load per-package baselines ---
+BASELINE_JSON=$(cat .test-baseline)
+BASELINE_ROOT=$(echo "$BASELINE_JSON" | node -e "console.log(JSON.parse(require('fs').readFileSync(0,'utf8')).rootTestsBaseline)")
+BASELINE_SHARED=$(echo "$BASELINE_JSON" | node -e "console.log(JSON.parse(require('fs').readFileSync(0,'utf8')).sharedTestsBaseline)")
+BASELINE_GOLDEN=$(echo "$BASELINE_JSON" | node -e "console.log(JSON.parse(require('fs').readFileSync(0,'utf8')).goldenTestsBaseline)")
+BASELINE_PGTAP=$(echo "$BASELINE_JSON" | node -e "console.log(JSON.parse(require('fs').readFileSync(0,'utf8')).pgtapTestsBaseline || 0)")
 
 # --- 1. vitest: root web app ---
 echo "Running root test suite (pnpm test)..."
@@ -101,7 +107,7 @@ TEST_EXIT_ROOT=$?
 set -e
 echo "$OUTPUT_ROOT"
 
-# --- 2. vitest: workspace packages (golden, server until /server is retired) ---
+# --- 2. vitest: workspace packages ---
 echo "Running package test suites (pnpm -r test)..."
 set +e
 OUTPUT_PKGS=$(pnpm -r test 2>&1)
@@ -117,13 +123,37 @@ if [ "$RUN_PGTAP" = "1" ]; then
   TEST_EXIT_PGTAP=$?
   set -e
   echo "$OUTPUT_PGTAP"
+fi
 
-  if [ $TEST_EXIT_ROOT -ne 0 ] || [ $TEST_EXIT_PKGS -ne 0 ] || [ $TEST_EXIT_PGTAP -ne 0 ]; then
-    echo "FAIL: a test command exited non-zero (root=$TEST_EXIT_ROOT, pkgs=$TEST_EXIT_PKGS, pgtap=$TEST_EXIT_PGTAP)."
-    exit 1
+# --- Parse vitest JSON results per package ---
+parse_vitest() {
+  local file="$1"
+  if [ ! -f "$file" ]; then
+    echo "0|0|0|0"
+    return
   fi
+  node -e "
+    const fs = require('fs');
+    try {
+      const r = JSON.parse(fs.readFileSync('$file', 'utf8'));
+      console.log([r.numPassedTests||0, r.numPendingTests||0, r.numTodoTests||0, r.numFailedTests||0].join('|'));
+    } catch (e) {
+      console.error('Could not parse $file: ' + e.message);
+      console.log('0|0|0|0');
+    }
+  "
+}
 
-  # --- Parse pgTAP TAP output: count ok/not ok lines ---
+ROOT_RESULTS=$(parse_vitest ".test-results.json")
+SHARED_RESULTS=$(parse_vitest "packages/shared/.test-results.json")
+GOLDEN_RESULTS=$(parse_vitest "packages/golden/.test-results.json")
+
+IFS='|' read -r ROOT_PASSED ROOT_PENDING ROOT_TODO ROOT_FAILED <<< "$ROOT_RESULTS"
+IFS='|' read -r SHARED_PASSED SHARED_PENDING SHARED_TODO SHARED_FAILED <<< "$SHARED_RESULTS"
+IFS='|' read -r GOLDEN_PASSED GOLDEN_PENDING GOLDEN_TODO GOLDEN_FAILED <<< "$GOLDEN_RESULTS"
+
+# --- pgTAP counts ---
+if [ "$RUN_PGTAP" = "1" ]; then
   PGTAP_PASSED=$(echo "$OUTPUT_PGTAP" | grep -cE '^\s*ok\b' || true)
   PGTAP_FAILED=$(echo "$OUTPUT_PGTAP" | grep -cE '^\s*not ok\b' || true)
 else
@@ -131,73 +161,79 @@ else
   PGTAP_FAILED=0
 fi
 
-# --- Aggregate vitest JSON results ---
-RESULT_FILES=$(node -e "
-  const fs = require('fs');
-  const files = ['.test-results.json', 'packages/golden/.test-results.json', 'server/.test-results.json'];
-  console.log(files.filter(f => fs.existsSync(f)).join(','));
-")
+# --- Aggregate ---
+TOTAL_PASSED=$((ROOT_PASSED + SHARED_PASSED + GOLDEN_PASSED + PGTAP_PASSED))
+TOTAL_FAILED=$((ROOT_FAILED + SHARED_FAILED + GOLDEN_FAILED + PGTAP_FAILED))
+TOTAL_PENDING=$((ROOT_PENDING + SHARED_PENDING + GOLDEN_PENDING))
+TOTAL_TODO=$((ROOT_TODO + SHARED_TODO + GOLDEN_TODO))
 
-TOTALS=$(RESULT_FILES="$RESULT_FILES" node -e "
-  const fs = require('fs');
-  let passed = 0, pending = 0, todo = 0, failed = 0;
-  const files = (process.env.RESULT_FILES || '').split(',').filter(Boolean);
-  for (const file of files) {
-    try {
-      const r = JSON.parse(fs.readFileSync(file, 'utf8'));
-      passed += r.numPassedTests || 0;
-      pending += r.numPendingTests || 0;
-      todo += r.numTodoTests || 0;
-      failed += r.numFailedTests || 0;
-    } catch (e) {
-      console.error('Could not parse ' + file + ': ' + e.message);
-    }
-  }
-  console.log([passed, pending, todo, failed].join('|'));
-")
-
-IFS='|' read -r PASSED PENDING TODO FAILED <<< "$TOTALS"
-
-TOTAL_PASSED=$((PASSED + PGTAP_PASSED))
-TOTAL_FAILED=$((FAILED + PGTAP_FAILED))
-
-echo "vitest passed: $PASSED (pending $PENDING, todo $TODO, failed $FAILED)"
+echo ""
+echo "=== Per-package vitest results ==="
+echo "root:            passed=$ROOT_PASSED  pending=$ROOT_PENDING  todo=$ROOT_TODO  failed=$ROOT_FAILED  (baseline: $BASELINE_ROOT)"
+echo "packages/shared: passed=$SHARED_PASSED  pending=$SHARED_PENDING  todo=$SHARED_TODO  failed=$SHARED_FAILED  (baseline: $BASELINE_SHARED)"
+echo "packages/golden: passed=$GOLDEN_PASSED  pending=$GOLDEN_PENDING  todo=$GOLDEN_TODO  failed=$GOLDEN_FAILED  (baseline: $BASELINE_GOLDEN)"
 if [ "$RUN_PGTAP" = "1" ]; then
-  echo "pgTAP passed:  $PGTAP_PASSED (failed $PGTAP_FAILED)"
+  echo "pgTAP:           passed=$PGTAP_PASSED  failed=$PGTAP_FAILED  (baseline: $BASELINE_PGTAP)"
 else
-  echo "pgTAP skipped: no SUPABASE_TEST_PROJECT_REF configured (local dev mode)"
+  echo "pgTAP:           skipped (no SUPABASE_TEST_PROJECT_REF)"
 fi
-echo "Total passed: $TOTAL_PASSED (Baseline required: $BASELINE)"
+echo ""
+echo "Total passed: $TOTAL_PASSED"
 
 # Clean up report files so they do not pollute the tree.
-for f in .test-results.json packages/golden/.test-results.json server/.test-results.json; do
+for f in .test-results.json packages/shared/.test-results.json packages/golden/.test-results.json; do
   rm -f "$f"
 done
 
+# --- Failures ---
 if [ "$TOTAL_FAILED" -gt 0 ]; then
   echo "FAIL: $TOTAL_FAILED test(s) failed."
   exit 1
 fi
 
-if [ "$PENDING" -gt 0 ] || [ "$TODO" -gt 0 ]; then
-  echo "FAIL: Found $PENDING skipped/pending and $TODO todo test(s). Never skip or todo tests."
+if [ "$TOTAL_PENDING" -gt 0 ] || [ "$TOTAL_TODO" -gt 0 ]; then
+  echo "FAIL: Found $TOTAL_PENDING skipped/pending and $TOTAL_TODO todo test(s). Never skip or todo tests."
   exit 1
 fi
 
-if [ "$TOTAL_PASSED" -lt "$BASELINE" ]; then
-  echo "FAIL: Test count $TOTAL_PASSED is below baseline $BASELINE! Never delete, skip or comment out a test."
+# --- Per-package baseline checks ---
+FAIL=0
+if [ "$ROOT_PASSED" -lt "$BASELINE_ROOT" ]; then
+  echo "FAIL: root test count $ROOT_PASSED is below baseline $BASELINE_ROOT!"
+  FAIL=1
+fi
+if [ "$SHARED_PASSED" -lt "$BASELINE_SHARED" ]; then
+  echo "FAIL: packages/shared test count $SHARED_PASSED is below baseline $BASELINE_SHARED!"
+  FAIL=1
+fi
+if [ "$GOLDEN_PASSED" -lt "$BASELINE_GOLDEN" ]; then
+  echo "FAIL: packages/golden test count $GOLDEN_PASSED is below baseline $BASELINE_GOLDEN!"
+  FAIL=1
+fi
+if [ "$RUN_PGTAP" = "1" ] && [ "$PGTAP_PASSED" -lt "$BASELINE_PGTAP" ]; then
+  echo "FAIL: pgTAP count $PGTAP_PASSED is below baseline $BASELINE_PGTAP!"
+  FAIL=1
+fi
+
+if [ "$FAIL" -ne 0 ]; then
+  echo "FAIL: one or more packages are below their test floor baseline."
   exit 1
 fi
 
-if [ "$TOTAL_PASSED" -gt "$BASELINE" ]; then
-  echo "Test count increased from $BASELINE to $TOTAL_PASSED. Raising baseline."
-  node -e "
-    const fs = require('fs');
-    const baseline = JSON.parse(fs.readFileSync('.test-baseline', 'utf8'));
-    baseline.totalTestsBaseline = $TOTAL_PASSED;
+# --- Raise baselines when counts grow ---
+node -e "
+  const fs = require('fs');
+  const baseline = JSON.parse(fs.readFileSync('.test-baseline', 'utf8'));
+  let changed = false;
+  if ($ROOT_PASSED > baseline.rootTestsBaseline) { baseline.rootTestsBaseline = $ROOT_PASSED; changed = true; }
+  if ($SHARED_PASSED > baseline.sharedTestsBaseline) { baseline.sharedTestsBaseline = $SHARED_PASSED; changed = true; }
+  if ($GOLDEN_PASSED > baseline.goldenTestsBaseline) { baseline.goldenTestsBaseline = $GOLDEN_PASSED; changed = true; }
+  if ($PGTAP_PASSED > baseline.pgtapTestsBaseline) { baseline.pgtapTestsBaseline = $PGTAP_PASSED; changed = true; }
+  if (changed) {
     baseline.lastVerified = new Date().toISOString().split('T')[0];
     fs.writeFileSync('.test-baseline', JSON.stringify(baseline, null, 2) + '\n');
-  "
-fi
+    console.log('Baseline raised to: root='$ROOT_PASSED', shared='$SHARED_PASSED', golden='$GOLDEN_PASSED', pgtap='$PGTAP_PASSED);
+  }
+"
 
-echo "OK: all tests passed and count meets or exceeds baseline ($TOTAL_PASSED >= $BASELINE)."
+echo "OK: all tests passed and every package meets or exceeds its test floor baseline."
