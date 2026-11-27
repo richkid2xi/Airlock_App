@@ -1,6 +1,7 @@
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { toSupabaseWallet } from '@/engines/auth/walletSource'
 
 export function CheckpointPage() {
   const { wallets, wallet, select, connected, publicKey } = useWallet()
@@ -54,14 +55,11 @@ export function CheckpointPage() {
       append(`Connected: ${adapter.publicKey?.toBase58()?.slice(0, 6) ?? 'n/a'}`)
 
       append('Calling supabase.auth.signInWithWeb3...')
-      const signMessage = (adapter as unknown as { signMessage?: (message: Uint8Array) => Promise<Uint8Array> }).signMessage
+      const wallet = toSupabaseWallet(adapter)
       const { data, error } = await supabase.auth.signInWithWeb3({
         chain: 'solana',
         statement: 'Airlock checkpoint test',
-        wallet: {
-          publicKey: adapter.publicKey,
-          signMessage,
-        },
+        wallet,
       })
       if (error) throw error
       append(`signInWithWeb3 OK. user: ${data.user?.id ?? 'n/a'}`)

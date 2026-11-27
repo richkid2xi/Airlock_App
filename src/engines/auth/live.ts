@@ -6,7 +6,7 @@
  */
 
 import type { AuthPort, AuthSession, WalletAccountLike } from './types'
-import { createWalletSource, type WalletSource } from './walletSource'
+import { createWalletSource, toSupabaseWallet, type WalletSource } from './walletSource'
 import { supabase } from '../../lib/supabase'
 
 export class AuthError extends Error {
@@ -74,16 +74,13 @@ export class LiveAuthEngine implements AuthPort {
     const signer = this.source.getSigner()
     if (!signer) throw new AuthError('No wallet connected; cannot sign in', 'no_wallet')
 
-    const wallet = {
-      publicKey: signer.publicKey,
-      signMessage: signer.signMessage,
-    }
+    const wallet = toSupabaseWallet(signer)
 
     const { data, error } = await supabase.auth.signInWithWeb3({
       chain: 'solana',
       statement: 'Airlock checkpoint test',
       wallet,
-    } as any)
+    })
 
     if (error) throw mapAuthError(error)
 

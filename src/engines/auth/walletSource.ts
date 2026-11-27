@@ -35,6 +35,41 @@ export interface WalletSource {
   onAccountChange(cb: (account: WalletAccount | null) => void): () => void;
 }
 
+/**
+ * Convert any wallet-like object (a wallet-standard adapter or a WalletSigner)
+ * into a Supabase-compatible SolanaWallet with all methods bound so `this`
+ * is preserved when supabase-js calls them detached.
+ *
+ * Only keys that exist on the adapter are included, because supabase may
+ * feature-detect on them.
+ */
+export interface SupabaseSolanaWallet {
+  publicKey?: { toBase58: () => string } | null;
+  signMessage?: (message: Uint8Array, encoding?: string) => Promise<Uint8Array> | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  signIn?: (...inputs: any[]) => Promise<any>;
+}
+
+export function toSupabaseWallet(adapter: {
+  publicKey?: { toBase58: () => string } | null;
+  signMessage?: (message: Uint8Array, encoding?: string) => Promise<Uint8Array>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  signIn?: (...inputs: any[]) => Promise<any>;
+}): SupabaseSolanaWallet {
+  const wallet: SupabaseSolanaWallet = {};
+  const pk = adapter.publicKey;
+  if (pk && typeof pk.toBase58 === 'function') {
+    wallet.publicKey = { toBase58: () => pk.toBase58() };
+  }
+  if (typeof adapter.signMessage === 'function') {
+    wallet.signMessage = adapter.signMessage.bind(adapter);
+  }
+  if (typeof adapter.signIn === 'function') {
+    wallet.signIn = adapter.signIn.bind(adapter);
+  }
+  return wallet;
+}
+
 function envSource(): 'standard' | 'direct' {
   const v = (import.meta as any).env?.VITE_WALLET_SOURCE?.toLowerCase()
   return v === 'direct' ? 'direct' : 'standard'
