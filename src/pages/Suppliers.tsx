@@ -6,12 +6,27 @@ import { PageHeading } from '../ui/PageHeading'
 import { Modal } from '../ui/Modal'
 import { RegistryPortError } from '../engines/registry/types'
 
+function formatMinor(amount: string, currency: string): string {
+  try {
+    const dec = currency === 'USDC' ? 6 : 2
+    const big = BigInt(amount)
+    const neg = big < 0
+    const abs = neg ? -big : big
+    const div = BigInt(10 ** dec)
+    const whole = (abs / div).toString()
+    const frac = (abs % div).toString().padStart(dec, '0')
+    return `${neg ? '-' : ''}${whole}.${frac}`
+  } catch { return amount }
+}
+
 export function Suppliers({ notify }: { notify: (message: string) => void }) {
   const [suppliers, setSuppliers] = useState<import('../engines/registry/types').Supplier[] | null>(null)
+  const [invoices, setInvoices] = useState<import('../engines/registry/types').Invoice[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [detailId, setDetailId] = useState<string | null>(null)
   const [draft, setDraft] = useState<{ name: string; payoutWallet: string; businessEmail: string; category: string; notes: string }>({
     name: '', payoutWallet: '', businessEmail: '', category: '', notes: ''
   })
@@ -24,8 +39,9 @@ export function Suppliers({ notify }: { notify: (message: string) => void }) {
     setError(null)
     setNotice(null)
     try {
-      const data = await registryEngine.suppliers.list()
+      const [data, invData] = await Promise.all([registryEngine.suppliers.list(), registryEngine.invoices.list()])
       setSuppliers(data)
+      setInvoices(invData)
     } catch (err) {
       if (err instanceof RegistryPortError) {
         setError(`${err.code}: ${err.message}`)
@@ -150,6 +166,22 @@ export function Suppliers({ notify }: { notify: (message: string) => void }) {
   if (open) panels.push(<Modal key="create" title="Create supplier" onClose={() => setOpen(false)}><form onSubmit={handleCreate}><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}><label className="field full">Supplier name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Acme Logistics Ltd"/></label><label className="field full">Payout wallet (Solana)<input name="payoutWallet" required value={draft.payoutWallet} onChange={e => setDraft({ ...draft, payoutWallet: e.target.value })} placeholder="7dHbWYKYz8KX6fG7vJq9P2mN3cR4tY5uE6wX7yZ8aB9"/></label><label className="field full" style={{ gridColumn: 'span 2' }}><small style={{ color: '#6b7280' }}>Must be base58, 32 bytes when decoded, 32-44 chars</small></label><label className="field full">Business email<input name="businessEmail" type="email" value={draft.businessEmail} onChange={e => setDraft({ ...draft, businessEmail: e.target.value })} placeholder="billing@acme.example"/></label><label className="field full">Category<input name="category" value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })} placeholder="Freight, SaaS, Marketing"/></label><label className="field full">Notes<textarea name="notes" value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Optional notes"/></label></div><div className="modal-actions"><button type="button" className="btn secondary" onClick={() => setOpen(false)}>Cancel</button><button className="btn primary" disabled={loading}>Create supplier</button></div></form></Modal>)
   if (editId !== null) panels.push(<Modal key="edit" title="Edit supplier" onClose={() => { setEditId(null); setDraft({ name: '', payoutWallet: '', businessEmail: '', category: '', notes: '' }); }}><form onSubmit={handleEdit}><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}><label className="field full">Supplier name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Acme Logistics Ltd"/></label><label className="field full">Payout wallet (Solana)<input name="payoutWallet" required value={draft.payoutWallet} onChange={e => setDraft({ ...draft, payoutWallet: e.target.value })} placeholder="7dHbWYKYz8KX6fG7vJq9P2mN3cR4tY5uE6wX7yZ8aB9"/></label><label className="field full" style={{ gridColumn: 'span 2' }}><small style={{ color: '#6b7280' }}>Must be base58, 32 bytes when decoded, 32-44 chars</small></label><label className="field full">Business email<input name="businessEmail" type="email" value={draft.businessEmail} onChange={e => setDraft({ ...draft, businessEmail: e.target.value })} placeholder="billing@acme.example"/></label><label className="field full">Category<input name="category" value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })} placeholder="Freight, SaaS, Marketing"/></label><label className="field full">Notes<textarea name="notes" value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Optional notes"/></label></div><div className="modal-actions"><button type="button" className="btn secondary" onClick={() => { setEditId(null); setDraft({ name: '', payoutWallet: '', businessEmail: '', category: '', notes: '' }); }}>Cancel</button><button className="btn primary" disabled={loading}>Update supplier</button></div></form></Modal>)
   if (notice !== null) panels.push(<div key="notice" style={{ padding: 16, background: '#fff4dd', border: '1px solid #f0d5a5', borderRadius: 8, marginBottom: 16 }}><strong>Notice:</strong> {notice}<div style={{ marginTop: 8, fontSize: 12, color: '#856404' }}>Payout wallet changed: verification reset.</div></div>)
+  const detailSupplier = detailId ? suppliers?.find((s) => s.id === detailId) ?? null : null
+  const detailInvoices = detailSupplier ? (invoices ?? []).filter((i) => i.supplierId === detailId) : []
+
+  if (detailSupplier !== null) panels.push(<Modal key="detail" title={`Supplier ${detailSupplier.name}`} onClose={() => setDetailId(null)} wide><div style={{ padding: 16, display: 'grid', gap: 12 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div><small style={{ color: '#6b7280' }}>Name</small><div>{detailSupplier.name}</div></div>
+      <div><small style={{ color: '#6b7280' }}>Payout wallet</small><div style={{ fontSize: 12, wordBreak: 'break-all' }}>{detailSupplier.payoutWallet}</div></div>
+      <div><small style={{ color: '#6b7280' }}>Business email</small><div>{detailSupplier.businessEmail || '—'}</div></div>
+      <div><small style={{ color: '#6b7280' }}>Category</small><div>{detailSupplier.category || '—'}</div></div>
+      <div><small style={{ color: '#6b7280' }}>Verification</small><div><Status>{detailSupplier.verificationStatus}</Status></div></div>
+      <div><small style={{ color: '#6b7280' }}>Notes</small><div style={{ whiteSpace: 'pre-wrap' }}>{detailSupplier.notes || '—'}</div></div>
+    </div>
+    <div><small style={{ color: '#6b7280' }}>Audit trail</small><ul style={{ listStyle: 'none', padding: 0, margin: '8px 0' }}><li style={{ fontSize: 13 }}>{detailSupplier.verifiedAt ? `Verified on ${detailSupplier.verifiedAt} by ${detailSupplier.verifiedBy || 'system'}` : 'Not yet verified'}</li><li style={{ fontSize: 13 }}>{detailSupplier.notes ? `Notes: ${detailSupplier.notes}` : 'No notes'}</li></ul></div>
+    <div><small style={{ color: '#6b7280' }}>Invoices ({detailInvoices.length})</small>{detailInvoices.length === 0 ? <div style={{ fontSize: 12, color: '#6b7280' }}>No invoices for this supplier.</div> : <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0' }}>{detailInvoices.map((i) => <li key={i.id} style={{ fontSize: 12 }}>{i.invoiceNumber} — {formatMinor(i.amountMinor, i.currency)} {i.currency} — {i.status}</li>)}</ul>}</div>
+    <button className="btn secondary" style={{ marginTop: 8 }} onClick={() => setDetailId(null)}>Close</button>
+  </div></Modal>)
 
   return <>
     <div className="panel">
@@ -175,8 +207,10 @@ export function Suppliers({ notify }: { notify: (message: string) => void }) {
                   <td style={{ padding: 10, fontSize: 14 }}><Status>{s.verificationStatus}</Status></td>
                   <td style={{ padding: 10, textAlign: 'right' }}>
                     {s.verificationStatus === 'unverified' && <button className="btn primary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => handleVerify(s.id)}>Verify</button>}
+                    {s.verificationStatus === 'unverified' && <button className="btn secondary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => setDetailId(s.id)}>Details</button>}
                     {s.verificationStatus !== 'unverified' && <button className="btn secondary" style={{ fontSize: 12, padding: '4px 10px' }} disabled>Verified</button>}
                     {s.verificationStatus !== 'unverified' && editId !== s.id && <button className="btn secondary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { setEditId(s.id); setDraft({ name: s.name, payoutWallet: s.payoutWallet, businessEmail: s.businessEmail || '', category: s.category || '', notes: s.notes || '' }); }}>Edit</button>}
+                    {editId !== s.id && <button className="btn secondary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => setDetailId(s.id)}>Details</button>}
                     {editId === s.id && <button className="btn danger" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { setEditId(null); setDraft({ name: '', payoutWallet: '', businessEmail: '', category: '', notes: '' }); }}>Cancel</button>}
                   </td>
                 </tr>
