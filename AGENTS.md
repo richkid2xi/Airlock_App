@@ -110,4 +110,50 @@ Tailwind emits utility classes in `@layer utilities`, and CSS outside any cascad
 
 - Small steps, no red builds, stop and ask instead of inventing values.
 
+---
+
+# GROUND TRUTH DECISIONS (final)
+
+## DECISIONS
+
+1. **Hard-coded business data inside components counts as MOCK DATA and is forbidden.**
+   - Forbidden: sample names, amounts, dates, counts, statuses, wallet addresses or signatures, positional `string[][]` rows, `setTimeout` that simulates async work, `Math.random` used as data, text like "Today 09:31".
+   - Allowed: UI labels, headings, explanatory copy.
+   - Anything that looks like data must come from an engine or be an in-place `<InProgress/>` placeholder.
+
+2. **Evaluation is LOCAL.** The pure `evaluate()` in `packages/shared` is the one evaluation path.
+   - There are no external evaluation, policy, supplier, invoice or settlement APIs.
+   - Legacy engines that depend on `VITE_*_API_URL` variables are dead code and are deleted when their slice replaces them.
+
+3. **Build items:**
+   - `RequireSession` and `RequireOnboarded` guards
+   - Wallet-change sign-out
+   - Onboarding autosave and resume
+   - `payment_requests`, `evaluations` and `paid_today` objects (ONE migration, not two)
+
+4. **No external API credentials are needed by any module.**
+
+## SLICE CONTRACT (every slice prompt must satisfy all of it)
+
+1. **Sweep the slice's pages for hard-coded business data.** Every hit is replaced by engine data or an in-place `InProgress` placeholder. None may remain.
+2. **Tests first** (vitest; test doubles only in `__fakes__` or test files); pure logic lives in `packages/shared`.
+3. **Engine =** `src/engines/<name>/{types.ts, live.ts, index.ts}`; typed errors; no fallback layer.
+4. **UI wiring** with loading, empty and error states using existing classes only (UI is frozen except for wiring; a designer works in parallel on branch `ui-polish`).
+5. **A verify script** `scripts/verify/<slice>.ts` exposed as `pnpm verify:<slice>`: reads `AIRLOCK_ACCESS_TOKEN` (and `AIRLOCK_ACCESS_TOKEN_2` for cross-user checks), `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from `.env.local`, prints PASS, FAIL or SKIPPED (with the reason) per check, exits non-zero on any FAIL, and deletes the rows it created. Write it; do NOT run anything that needs my token or wallet: list the exact command under "Needs Elikem".
+6. **`docs/testing/<slice>.md`**: a click-by-click manual checklist with the expected result.
+7. **Flip the `FEATURES` entry to `'live'` only when the slice is implemented, unit-tested and typecheck, build and tests are green.**
+8. **Small commits**, push `origin foundation`, append to `docs/overnight-log.md` (what was done, commit hashes, per-package test counts, what was verified by running versus only written, "Needs Elikem").
+
+## AUTONOMY
+
+Never wait for the user. When something is ambiguous choose the safest option consistent with this file and SOLANA.md and record it in `docs/overnight-log.md` under "Decisions".
+
+Stop and report only for:
+- a red build you cannot fix in 2 attempts,
+- a missing credential,
+- a failing migration push (twice),
+- anything that would delete data.
+
+**Migrations:** always the next free number, `--dry-run` first, then `--yes` for NEW migrations only; never edit an applied migration; never reset, drop or truncate. Never touch the `airlock-test` project. Keep every earlier rule in this file.
+
 (End of file - total 78 lines)
