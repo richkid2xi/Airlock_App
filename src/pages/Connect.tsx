@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '../ui/Icon'
 import { Logo } from '../ui/Logo'
+import { Toast } from '../ui/Toast'
 import { authEngine } from '../engines/auth'
 import { useRoute } from '../router/useRoute'
 
@@ -11,6 +12,7 @@ export function Connect({ onComplete }: { onComplete: () => void }) {
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; tone?: 'success' | 'error' } | null>(null)
 
   const loadWallets = useCallback(() => {
     setLoading(true)
@@ -32,7 +34,8 @@ export function Connect({ onComplete }: { onComplete: () => void }) {
       setConnecting(walletName)
       try {
         await authEngine.connectAndSignIn(walletName)
-        onComplete()
+        setToast({ message: 'Account connected', tone: 'success' })
+        setTimeout(() => onComplete(), 1200)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to connect wallet')
         setConnecting(null)
@@ -63,7 +66,7 @@ export function Connect({ onComplete }: { onComplete: () => void }) {
         <div className="connect-card">
           <Logo />
           <h1>Connect your wallet</h1>
-          <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 16 }}>{error}</p>
+          <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 12 }}>{error}</p>
           <button className="btn secondary" onClick={loadWallets}>Try again</button>
         </div>
       </main>
@@ -76,7 +79,7 @@ export function Connect({ onComplete }: { onComplete: () => void }) {
         <Logo />
         <h1>Connect your wallet</h1>
         <div className="wallet-list">
-          {wallets.length === 0 && <p style={{ fontSize: 14, color: '#6b7280' }}>No wallets detected. Install a Solana wallet and refresh.</p>}
+          {wallets.length === 0 && <p style={{ fontSize: 13, color: '#6b7280' }}>No wallets detected. Install a Solana wallet and refresh.</p>}
           {wallets.map((w) => {
             const installed = w.readyState === 'Installed'
             const busy = connecting === w.name
@@ -99,6 +102,7 @@ export function Connect({ onComplete }: { onComplete: () => void }) {
         </div>
         <p className="connect-disclosure">Airlock only requests a signature to confirm your identity. It cannot access or move your funds.</p>
       </div>
+      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
     </main>
   )
 }

@@ -4,6 +4,7 @@ import { Logo } from '../ui/Logo'
 import { Status } from '../ui/Status'
 import { onboardingEngine } from '../engines/onboarding'
 import { OnboardingStep1Schema, OnboardingStep2Schema } from '@airlock/shared'
+import { useRoute } from '../router/useRoute'
 
 const steps = ['Organization', 'Payment setup', 'Security', 'Complete']
 
@@ -32,7 +33,7 @@ const EMPTY_DRAFT: Draft = {
   approvalThreshold: '',
 }
 
-const AUTOSAVE_DEBOUNCE_MS = 800
+const AUTOSAVE_DEBOUNCE_MS = 400
 
 function clusterLabel(): string {
   const cluster = (import.meta as any).env?.VITE_SOLANA_CLUSTER
@@ -68,6 +69,7 @@ function validateStep2(draft: Draft): FieldErrors {
 }
 
 export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void; startAt?: number }) {
+  const { navigate } = useRoute()
   const [step, setStep] = useState(startAt)
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -129,6 +131,14 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
     }
   }
 
+  const handleBack = () => {
+    if (step === 0) {
+      navigate('/connect')
+      return
+    }
+    setStep(step - 1)
+  }
+
   const goNext = async () => {
     if (step === 0) {
       const e = validateStep1(draft)
@@ -158,7 +168,6 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
 
   const content: ReactNode[] = [
     <div className="form-content" key="org">
-      <div className="step-kicker">Organization setup</div>
       <h2>Tell us about your organization</h2>
       <p className="lead">This helps us configure your payment environment and reporting.</p>
       <div className="field-stack">
@@ -195,7 +204,6 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
       </div>
     </div>,
     <div className="form-content" key="payment">
-      <div className="step-kicker">Payment setup</div>
       <h2>Configure your payment environment</h2>
       <p className="lead">Set the default network and boundaries Airlock will enforce across agent-initiated requests.</p>
       <div className="form-grid">
@@ -229,7 +237,6 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
       </div>
     </div>,
     <div className="form-content" key="security">
-      <div className="step-kicker">Organization security</div>
       <h2>Protection from request to payout</h2>
       <p className="lead">Every agent-initiated payment is checked against your registered records and control policies.</p>
       <div className="control-list">
@@ -250,7 +257,6 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
     </div>,
     <div className="complete-content" key="complete">
       <div className="complete-mark"><Icon name="check" size={28} /></div>
-      <div className="step-kicker">Setup complete</div>
       <h2>Your payment environment is ready.</h2>
       <p className="lead">{draft.organizationName || 'Your organization'} is protected by Airlock. You can now register invoices, verify suppliers and authorize AI agents.</p>
       <div className="summary-box">
@@ -267,8 +273,8 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
   ]
 
   const stepActions = (
-    <div className="form-actions">
-      {step > 0 && <button className="btn quiet" onClick={() => setStep(step - 1)}>Back</button>}
+    <div className="onboarding-actions">
+      <button className="btn quiet" onClick={handleBack}>Back</button>
       <button className="btn primary" onClick={goNext} disabled={step === 3 && completeState === 'loading'}>
         {step === 3 ? (completeState === 'loading' ? 'Completing…' : 'Go to dashboard') : 'Continue'}
         <Icon name="arrow" />
@@ -279,24 +285,13 @@ export function Onboarding({ onComplete, startAt = 0 }: { onComplete: () => void
   return (
     <main className="onboarding">
       <div className="onboarding-card">
-        <Logo />
-        <div className="onboarding-body">
-          <div className="progress-steps">
-            {steps.map((s, i) => (
-              <button
-                key={s}
-                disabled={i > maxSavedStep}
-                className={`${i === step ? 'active' : ''} ${i < step ? 'done' : ''}`}
-                onClick={() => setStep(i)}
-              >
-                <span>{i < step ? <Icon name="check" size={13} /> : i + 1}</span>
-                <div>
-                  <b>{s}</b>
-                  <small>{i === step ? 'In progress' : i < step ? 'Complete' : 'Upcoming'}</small>
-                </div>
-              </button>
-            ))}
+        <div className="onboarding-header">
+          <div className="onboarding-header-left">
+            <Logo compact />
+            <div className="step-label"><span className="step-number">Step {step + 1} of 4</span><span className="step-name">{steps[step]}</span></div>
           </div>
+        </div>
+        <div className="onboarding-body">
           {content[step]}
           {stepActions}
         </div>
