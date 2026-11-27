@@ -40,7 +40,7 @@ Tailwind emits utility classes in `@layer utilities`, and CSS outside any cascad
 
 1. **Type safety first.** Model business entities as named TypeScript types, not positional `string[]` rows.
 2. **Stable IDs.** Reference entities by stable IDs (UUIDs or business keys), never by display names.
-3. **Honest fallback.** A live engine call that fails on transport/RPC errors falls back to mock only when `VITE_ALLOW_MOCK_FALLBACK=true`, marks the engine `degraded`, and surfaces a "Mock data" badge. Never present mock as live.
+3. **Honest result.** A live engine call that succeeds or fails returns a typed error with a clear message and a Retry where it makes sense. Never present mock data as live.
 4. **Typed domain.** Core entities (`Invoice`, `Supplier`, `Agent`, `Policy`, `PaymentRequest`, `Evaluation`, `Approval`) and enums live in the domain layer; the canonical copy is `packages/shared`.
 5. **Minor units.** Monetary amounts are integer minor units (USDC = 6 decimals) as strings/`bigint`. Never floats in domain logic; format only at the display edge.
 
@@ -58,27 +58,32 @@ Tailwind emits utility classes in `@layer utilities`, and CSS outside any cascad
 
 12. **Shared logic.** zod schemas, minor-unit helpers and (later) the evaluator live in `packages/shared` and are imported by web, Edge Functions (import map) and tests. Never copy-paste logic between client and functions.
 
-13. **Honest result.** Correctness first, optimize only against measured benchmarks. Never "test toward passing".
+13. **Small steps.** Small steps, no red builds, stop and ask instead of inventing values.
 
 ## Keep these existing rules
 
 - **UI frozen.** Teammate polishes visuals in parallel. Only wire data and add loading/error/empty states, reusing existing classes.
-- **Engine pattern.** `src/engines/<name>/{types,mock,live,index}.ts` + registry + `withFallback` + `MockBadge` + Settings "Engine status" list.
-- **Honest fallback.** A live engine call that fails on transport/RPC errors falls back to mock only when `VITE_ALLOW_MOCK_FALLBACK=true`, marks the engine `degraded`, and surfaces a "Mock data" badge. Never present mock as live. **401/403 and RLS denials NEVER fall back to mock.**
 
-## Testing
+- **Engine pattern.** `src/engines/<name>/{types.ts, live.ts, index.ts}` + registry + `withFallback` + Settings "Engine status" list. **No** `mock.ts`, no seed arrays, no fallback layer, no `VITE_ENGINE_*` flags, no `VITE_ALLOW_MOCK_FALLBACK`, no Mock badge.
 
-- Golden vectors live in `packages/golden` (JSON + typed loader + JSON schema) and are written BEFORE the logic they test.
-- `scripts/test.sh` runs vitest (JSON reporter) and `supabase test db`, sums passed tests, compares to `.test-baseline`, exits non-zero if lower or if anything is skipped/todo, raises the baseline when the count grows.
+- **Honest result.** Correctness first, optimize only against measured benchmarks. Never "test toward passing".
 
-## Monorepo skeleton
+- **Honest error handling.** Engine errors are shown with their typed error code (e.g. `not_found`, `conflict`, `validation`, `forbidden`, `unauthorized`, `network`) and a user-friendly message. A `Retry` action is shown where appropriate (e.g. network transient, wallet not installed, provider rejected). A live engine call that fails on transport/RPC errors is marked `degraded` only when the engine's own fallback logic determines it is safe; the "Mock data" badge is **never** shown. 401/403 and RLS denials NEVER fall back to mock.
 
-- Web app stays at repo root; do NOT move `src/`.
-- `packages/shared/` — zod schemas + domain types + minor-unit helpers. Canonical domain copy. Web imports from here.
-- `packages/golden/` — golden vectors as JSON + typed loader + JSON schema.
-- `supabase/` — migrations, functions, tests (pgTAP), seed.
-- `programs/` — README placeholder (Anchor workspace later).
-- `scripts/test.sh` — vitest + supabase test db aggregation against `.test-baseline`.
+## Test Doubles & Mock Data
+
+- **Test doubles** (mocks, fakes, stubs) may exist **only** in test files (`*.test.*`) or in dedicated `__fakes__` folders under `src/`. **Non-test code under `src/` must never import from `__fakes__` paths or contain the strings `"mock-seed"` or `"mockData"`.** The test harness (`scripts/test.sh`) includes a check that fails the build if any non-test source file contains these patterns.
+
+- **Demo data** means real database rows created by a function the user triggers on purpose. **Never** hard-coded arrays in the client, never simulated wallet connections, never fixed identities that pretend to be live.
+
+- Tests whose only subject is deleted mock or fallback code may be deleted: this is pre-approved. List every deleted test file with its test count and reason, and lower `.test-baseline` by exactly the deleted count. Any other test deletion requires asking.
+
+- The `.test-baseline` tracks real, live-engine test passes only. If mock-engine test counts disappear from the baseline, the baseline drops by exactly that count.
+
+## Unfinished Modules
+
+- Unfinished modules are **gated** by `src/config/features.ts` (Step 2). A module that is not yet `live` shows an `InProgress` panel (see Step 2) rather than presenting simulated data as if it were real.
+- The `Features` state map lives in `src/config/features.ts`. Each entry is `'live'` or `'in_progress'`. No engine may present mock data behind a feature gate.
 
 ## Supabase
 
@@ -105,4 +110,4 @@ Tailwind emits utility classes in `@layer utilities`, and CSS outside any cascad
 
 - Small steps, no red builds, stop and ask instead of inventing values.
 
-(End of file - total 58 lines)
+(End of file - total 78 lines)
