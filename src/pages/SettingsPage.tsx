@@ -3,8 +3,7 @@ import { Icon, type IconName } from '../ui/Icon'
 import { Status } from '../ui/Status'
 import { PageHeading } from '../ui/PageHeading'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { FEATURES, type FeatureName } from '../config/features'
-import { FEATURE_LABELS } from '../shell/DashboardApp'
+import { FEATURES, type FeatureName, FEATURE_LABELS } from '../config/features'
 
 export function SettingsPage({ notify, onLogout }: { notify: (m: string) => void; onLogout: () => void }) {
   const [section, setSection] = useState('Organization profile')
