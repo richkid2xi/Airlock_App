@@ -51,6 +51,26 @@
 .icon-btn { width:38px; height:38px; border:0; border-radius:9px; background:transparent; display:grid; place-items:center; color:var(--muted); padding:0; }
 .icon-btn:hover { color:var(--ink); background:var(--subtle); }
 
+/* Connect page */
+.connect { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 20px; }
+.connect-card { width:100%; max-width:440px; background:#fff; border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:48px 40px; }
+.connect-card .logo { margin-bottom:32px; }
+.connect-card h1 { font-size:28px; letter-spacing:-.03em; line-height:1.2; font-weight:650; margin-bottom:12px; }
+.connect-card > p { color:var(--muted); line-height:1.65; margin-bottom:32px; font-size:15px; }
+.wallet-list { display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
+.wallet-btn { width:100%; min-height:56px; padding:12px 16px; border:1px solid var(--line); border-radius:var(--radius-md); background:#fff; display:flex; align-items:center; gap:12px; text-align:left; color:var(--ink); font-size:14px; transition:.15s ease; }
+.wallet-btn:hover:not(:disabled) { background:var(--subtle); border-color:var(--brand); }
+.wallet-btn:disabled { opacity:.55; cursor:not-allowed; }
+.wallet-btn .wallet-icon { width:32px; height:32px; border-radius:8px; background:var(--brand-light); color:var(--brand); display:grid; place-items:center; flex-shrink:0; }
+.wallet-btn .wallet-name { font-weight:600; }
+.wallet-btn .wallet-status { font-size:12px; color:var(--muted); }
+.wallet-btn.connecting { border-color:var(--brand); background:var(--brand-light); }
+.wallet-btn .connecting-text { font-size:12px; color:var(--brand); margin-left:auto; }
+.wallet-safety { display:flex; gap:10px; align-items:flex-start; color:var(--green); padding:12px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:13px; line-height:1.5; }
+.wallet-safety .icon { flex-shrink:0; margin-top:2px; }
+.wallet-safety b { font-size:12px; display:block; margin-bottom:2px; }
+.wallet-safety small { color:var(--muted); font-size:11px; }
+
 /* Onboarding */
 .onboarding { min-height:100vh; background:#fff; }
 .onboarding-header { height:76px; padding:0 5vw; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line-soft); }

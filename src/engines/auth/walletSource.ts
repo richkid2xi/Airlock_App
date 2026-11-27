@@ -12,6 +12,7 @@ export interface WalletInfo {
   name: string;
   icon: string;
   readyState: 'Installed' | 'NotDetected' | 'Loadable' | 'Unsupported';
+  installUrl?: string;
 }
 
 export interface WalletAccount {
@@ -70,238 +71,236 @@ export function toSupabaseWallet(adapter: {
   return wallet;
 }
 
-function envSource(): 'standard' | 'direct' {
-  const v = (import.meta as any).env?.VITE_WALLET_SOURCE?.toLowerCase()
-  return v === 'direct' ? 'direct' : 'standard'
-}
+const SUPPORTED_WALLETS = [
+  { name: 'Phantom', detect: (w: any) => !!w.phantom?.solana || w.solana?.isPhantom, installUrl: 'https://phantom.app/' },
+  { name: 'Solflare', detect: (w: any) => !!w.solflare, installUrl: 'https://solflare.com/' },
+  { name: 'Backpack', detect: (w: any) => !!w.backpack, installUrl: 'https://backpack.app/' },
+];
 
-function installedProviderNames(): string[] {
-  if (typeof window === 'undefined') return []
-  const names: string[] = []
-  // Detect any solana wallet provider on window (generic, no Phantom hard-coding)
-  const w = window as any
-  // Check for standard wallet properties
-  if (w.solana?.isSolana) names.push('Solana')
-  if (w.solflare?.isSolflare) names.push('Solflare')
-  if (w.backpack?.isBackpack) names.push('Backpack')
-  // Also check window.phantom generically without pushing 'Phantom'
-  if (w.phantom?.solana) {
-    // Use the provider's own name if available, otherwise generic
-    names.push(w.phantom.name || 'Wallet')
+function getWalletInfos(): WalletInfo[] {
+  if (typeof window === 'undefined') {
+    return SUPPORTED_WALLETS.map((wallet) => ({
+      name: wallet.name,
+      icon: '',
+      readyState: 'NotDetected' as const,
+      installUrl: wallet.installUrl,
+    }));
   }
-  return names
+  const w = window as any;
+  return SUPPORTED_WALLETS.map((wallet) => ({
+    name: wallet.name,
+    icon: '',
+    readyState: wallet.detect(w) ? ('Installed' as const) : ('NotDetected' as const),
+    installUrl: wallet.installUrl,
+  }));
 }
 
 function getDirectProvider(name: string) {
-  if (typeof window === 'undefined') return null
-  const w = window as any
-  const lower = name.toLowerCase()
-  if (lower === 'solflare') return w.solflare
-  if (lower === 'backpack') return w.backpack
-  if (lower === 'phantom') return w.phantom?.solana ?? w.solana
-  if (lower === 'solana') return w.solana
+  if (typeof window === 'undefined') return null;
+  const w = window as any;
+  const lower = name.toLowerCase();
+  if (lower === 'solflare') return w.solflare;
+  if (lower === 'backpack') return w.backpack;
+  if (lower === 'phantom') return w.phantom?.solana ?? w.solana;
+  if (lower === 'solana') return w.solana;
   for (const key of ['solflare', 'backpack', 'phantom', 'solana']) {
-    if (w[key]) return w[key]
+    if (w[key]) return w[key];
   }
-  return null
+  return null;
 }
 
 export class StandardWalletSource implements WalletSource {
-  private listeners = new Set<(account: WalletAccount | null) => void>()
-  private currentAccount: WalletAccount | null = null
-  private currentSigner: WalletSigner | null = null
-  private selectedName: string | null = null
+  private listeners = new Set<(account: WalletAccount | null) => void>();
+  private currentAccount: WalletAccount | null = null;
+  private currentSigner: WalletSigner | null = null;
+  private selectedName: string | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.syncFromWindow()
+      this.syncFromWindow();
     }
   }
 
   private syncFromWindow() {
-    const names = installedProviderNames()
-    if (names.length > 0 && !this.selectedName) {
-      this.selectedName = names[0]
+    const infos = getWalletInfos();
+    const installed = infos.find((i) => i.readyState === 'Installed');
+    if (installed && !this.selectedName) {
+      this.selectedName = installed.name;
     }
   }
 
   list(): WalletInfo[] {
-    if (typeof window === 'undefined') return []
-    const names = installedProviderNames()
-    return names.map((name) => ({
-      name,
-      icon: '',
-      readyState: 'Installed' as const,
-    }))
+    return getWalletInfos();
   }
 
   async connect(name: string): Promise<WalletAccount> {
-    const provider = getDirectProvider(name)
-    if (!provider) throw new Error(`Wallet ${name} not found`)
+    const provider = getDirectProvider(name);
+    if (!provider) throw new Error(`Wallet ${name} not found`);
 
-    this.selectedName = name
+    this.selectedName = name;
 
     if (provider.connect) {
-      await provider.connect()
+      await provider.connect();
     } else if (provider.request) {
-      await provider.request({ method: 'connect' })
+      await provider.request({ method: 'connect' });
     }
 
-    const publicKey = provider.publicKey?.toBase58?.()
-    if (!publicKey) throw new Error('Wallet did not return a public key')
+    const publicKey = provider.publicKey?.toBase58?.();
+    if (!publicKey) throw new Error('Wallet did not return a public key');
 
     const account: WalletAccount = {
       publicKey,
       address: publicKey,
       network: 'devnet',
-    }
-    this.currentAccount = account
+    };
+    this.currentAccount = account;
     this.currentSigner = {
       signMessage: async (msg: Uint8Array) => {
-        const sig = await provider.signMessage(msg, 'utf8')
-        return sig
+        const sig = await provider.signMessage(msg, 'utf8');
+        return sig;
       },
       publicKey: provider.publicKey,
       signIn: provider.signIn ? async (input: unknown) => provider.signIn(input) : undefined,
-    }
-    this.emit()
-    return account
+    };
+    this.emit();
+    return account;
   }
 
   async disconnect(): Promise<void> {
     if (this.selectedName) {
-      const provider = getDirectProvider(this.selectedName)
+      const provider = getDirectProvider(this.selectedName);
       if (provider?.disconnect) {
-        await provider.disconnect()
+        await provider.disconnect();
       }
     }
-    this.currentAccount = null
-    this.currentSigner = null
-    this.selectedName = null
-    this.emit()
+    this.currentAccount = null;
+    this.currentSigner = null;
+    this.selectedName = null;
+    this.emit();
   }
 
   getAccount(): WalletAccount | null {
-    return this.currentAccount
+    return this.currentAccount;
   }
 
   getSigner(): WalletSigner | null {
-    return this.currentSigner
+    return this.currentSigner;
   }
 
   onAccountChange(cb: (account: WalletAccount | null) => void): () => void {
-    this.listeners.add(cb)
-    return () => this.listeners.delete(cb)
+    this.listeners.add(cb);
+    return () => this.listeners.delete(cb);
   }
 
   private emit() {
-    for (const cb of this.listeners) cb(this.currentAccount)
+    for (const cb of this.listeners) cb(this.currentAccount);
   }
 }
 
 export class DirectWalletSource implements WalletSource {
-  private listeners = new Set<(account: WalletAccount | null) => void>()
-  private currentAccount: WalletAccount | null = null
-  private currentSigner: WalletSigner | null = null
-  private selectedName: string | null = null
+  private listeners = new Set<(account: WalletAccount | null) => void>();
+  private currentAccount: WalletAccount | null = null;
+  private currentSigner: WalletSigner | null = null;
+  private selectedName: string | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
-      const names = installedProviderNames()
-      if (names.length > 0) this.selectedName = names[0]
+      const infos = getWalletInfos();
+      const installed = infos.find((i) => i.readyState === 'Installed');
+      if (installed) this.selectedName = installed.name;
     }
   }
 
   list(): WalletInfo[] {
-    if (typeof window === 'undefined') return []
-    return installedProviderNames().map((name) => ({
-      name,
-      icon: '',
-      readyState: 'Installed' as const,
-    }))
+    return getWalletInfos();
   }
 
   async connect(name: string): Promise<WalletAccount> {
-    const provider = getDirectProvider(name)
-    if (!provider) throw new Error(`Wallet ${name} not found`)
+    const provider = getDirectProvider(name);
+    if (!provider) throw new Error(`Wallet ${name} not found`);
 
-    this.selectedName = name
+    this.selectedName = name;
 
     if (provider.connect) {
-      await provider.connect()
+      await provider.connect();
     } else if (provider.request) {
-      await provider.request({ method: 'connect' })
+      await provider.request({ method: 'connect' });
     }
 
-    const publicKey = provider.publicKey?.toBase58?.()
-    if (!publicKey) throw new Error('Wallet did not return a public key')
+    const publicKey = provider.publicKey?.toBase58?.();
+    if (!publicKey) throw new Error('Wallet did not return a public key');
 
     const account: WalletAccount = {
       publicKey,
       address: publicKey,
       network: 'devnet',
-    }
-    this.currentAccount = account
+    };
+    this.currentAccount = account;
     this.currentSigner = {
       signMessage: async (msg: Uint8Array) => {
-        const sig = await provider.signMessage(msg, 'utf8')
-        return sig
+        const sig = await provider.signMessage(msg, 'utf8');
+        return sig;
       },
       publicKey: provider.publicKey,
       signIn: provider.signIn ? async (input: unknown) => provider.signIn(input) : undefined,
-    }
-    this.emit()
-    return account
+    };
+    this.emit();
+    return account;
   }
 
   async disconnect(): Promise<void> {
     if (this.selectedName) {
-      const provider = getDirectProvider(this.selectedName)
+      const provider = getDirectProvider(this.selectedName);
       if (provider?.disconnect) {
-        await provider.disconnect()
+        await provider.disconnect();
       }
     }
-    this.currentAccount = null
-    this.currentSigner = null
-    this.selectedName = null
-    this.emit()
+    this.currentAccount = null;
+    this.currentSigner = null;
+    this.selectedName = null;
+    this.emit();
   }
 
   getAccount(): WalletAccount | null {
-    return this.currentAccount
+    return this.currentAccount;
   }
 
   getSigner(): WalletSigner | null {
-    return this.currentSigner
+    return this.currentSigner;
   }
 
   onAccountChange(cb: (account: WalletAccount | null) => void): () => void {
-    this.listeners.add(cb)
-    return () => this.listeners.delete(cb)
+    this.listeners.add(cb);
+    return () => this.listeners.delete(cb);
   }
 
   private emit() {
-    for (const cb of this.listeners) cb(this.currentAccount)
+    for (const cb of this.listeners) cb(this.currentAccount);
   }
 }
 
 export function createWalletSource(): WalletSource {
-  return envSource() === 'direct' ? new DirectWalletSource() : new StandardWalletSource()
+  return envSource() === 'direct' ? new DirectWalletSource() : new StandardWalletSource();
+}
+
+function envSource(): 'standard' | 'direct' {
+  const v = (import.meta as any).env?.VITE_WALLET_SOURCE?.toLowerCase();
+  return v === 'direct' ? 'direct' : 'standard';
 }
 
 export class FakeWalletSource implements WalletSource {
-  private listeners = new Set<(account: WalletAccount | null) => void>()
-  private accounts = new Map<string, WalletAccount>()
-  private signers = new Map<string, WalletSigner>()
-  private connectedName: string | null = null
+  private listeners = new Set<(account: WalletAccount | null) => void>();
+  private accounts = new Map<string, WalletAccount>();
+  private signers = new Map<string, WalletSigner>();
+  private connectedName: string | null = null;
 
   constructor(accounts: Record<string, WalletAccount> = {}) {
     for (const [name, acc] of Object.entries(accounts)) {
-      this.accounts.set(name, acc)
+      this.accounts.set(name, acc);
       this.signers.set(name, {
         signMessage: async (msg: Uint8Array) => new Uint8Array(64),
         publicKey: { toBase58: () => acc.publicKey },
-      })
+      });
     }
   }
 
@@ -310,37 +309,37 @@ export class FakeWalletSource implements WalletSource {
       name,
       icon: '',
       readyState: 'Installed' as const,
-    }))
+    }));
   }
 
   async connect(name: string): Promise<WalletAccount> {
-    const acc = this.accounts.get(name)
-    if (!acc) throw new Error(`Fake wallet ${name} not configured`)
-    this.connectedName = name
-    this.emit()
-    return acc
+    const acc = this.accounts.get(name);
+    if (!acc) throw new Error(`Fake wallet ${name} not configured`);
+    this.connectedName = name;
+    this.emit();
+    return acc;
   }
 
   async disconnect(): Promise<void> {
-    this.connectedName = null
-    this.emit()
+    this.connectedName = null;
+    this.emit();
   }
 
   getAccount(): WalletAccount | null {
-    return this.connectedName ? this.accounts.get(this.connectedName) ?? null : null
+    return this.connectedName ? this.accounts.get(this.connectedName) ?? null : null;
   }
 
   getSigner(): WalletSigner | null {
-    return this.connectedName ? this.signers.get(this.connectedName) ?? null : null
+    return this.connectedName ? this.signers.get(this.connectedName) ?? null : null;
   }
 
   onAccountChange(cb: (account: WalletAccount | null) => void): () => void {
-    this.listeners.add(cb)
-    return () => this.listeners.delete(cb)
+    this.listeners.add(cb);
+    return () => this.listeners.delete(cb);
   }
 
   private emit() {
-    const acc = this.getAccount()
-    for (const cb of this.listeners) cb(acc)
+    const acc = this.getAccount();
+    for (const cb of this.listeners) cb(acc);
   }
 }
