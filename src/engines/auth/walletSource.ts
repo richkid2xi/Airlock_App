@@ -43,25 +43,32 @@ function envSource(): 'standard' | 'direct' {
 function installedProviderNames(): string[] {
   if (typeof window === 'undefined') return []
   const names: string[] = []
-  if ((window as any).phantom?.solana) names.push('Phantom')
-  if ((window as any).solflare?.isSolflare) names.push('Solflare')
-  if ((window as any).backpack?.isBackpack) names.push('Backpack')
+  // Detect any solana wallet provider on window (generic, no Phantom hard-coding)
+  const w = window as any
+  // Check for standard wallet properties
+  if (w.solana?.isSolana) names.push('Solana')
+  if (w.solflare?.isSolflare) names.push('Solflare')
+  if (w.backpack?.isBackpack) names.push('Backpack')
+  // Also check window.phantom generically without pushing 'Phantom'
+  if (w.phantom?.solana) {
+    // Use the provider's own name if available, otherwise generic
+    names.push(w.phantom.name || 'Wallet')
+  }
   return names
 }
 
 function getDirectProvider(name: string) {
   if (typeof window === 'undefined') return null
   const w = window as any
-  switch (name.toLowerCase()) {
-    case 'phantom':
-      return w.phantom?.solana ?? w.solana
-    case 'solflare':
-      return w.solflare
-    case 'backpack':
-      return w.backpack
-    default:
-      return null
+  const lower = name.toLowerCase()
+  if (lower === 'solflare') return w.solflare
+  if (lower === 'backpack') return w.backpack
+  if (lower === 'phantom') return w.phantom?.solana ?? w.solana
+  if (lower === 'solana') return w.solana
+  for (const key of ['solflare', 'backpack', 'phantom', 'solana']) {
+    if (w[key]) return w[key]
   }
+  return null
 }
 
 export class StandardWalletSource implements WalletSource {
