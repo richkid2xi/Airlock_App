@@ -26,7 +26,7 @@ export const FEATURES: Record<FeatureName, FeatureState> = {
   policies: 'live',
   approvals: 'in_progress',
   chain: 'in_progress',
-  metrics: 'in_progress',
+  metrics: 'live',
 } as const;
 
 export function isFeatureLive(feature: FeatureName): boolean {
