@@ -1,36 +1,43 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react'
+import { validatePayoutWallet } from '@airlock/shared/registry'
 import { registryEngine } from '../engines/registry/index'
-import { Icon } from '../ui/Icon'
 import { Status } from '../ui/Status'
 import { PageHeading } from '../ui/PageHeading'
 import { Modal } from '../ui/Modal'
-import { RegistryPortError, type Supplier } from '../engines/registry/types'
+import { RegistryPortError } from '../engines/registry/types'
 
-export function Suppliers({ notify }: { notify: (m: string) => void }) {
-  const [suppliers, setSuppliers] = useState<Supplier[] | null>(null)
+export function Suppliers({ notify }: { notify: (message: string) => void }) {
+  const [suppliers, setSuppliers] = useState<import('../engines/registry/types').Supplier[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
   const [draft, setDraft] = useState<{ name: string; payoutWallet: string; businessEmail: string; category: string; notes: string }>({
     name: '', payoutWallet: '', businessEmail: '', category: '', notes: ''
   })
+  const [statusFilter, setStatusFilter] = useState<'all' | 'unverified' | 'review_required' | 'verified'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [notice, setNotice] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setNotice(null)
     try {
       const data = await registryEngine.suppliers.list()
       setSuppliers(data)
     } catch (err) {
       if (err instanceof RegistryPortError) {
         setError(`${err.code}: ${err.message}`)
+        notify(`${err.code}: ${err.message}`)
       } else {
         setError(String(err))
+        notify(String(err))
       }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [notify])
 
   useEffect(() => { load() }, [load])
 
@@ -38,12 +45,17 @@ export function Suppliers({ notify }: { notify: (m: string) => void }) {
     e.preventDefault()
     const form = e.currentTarget
     const d = Object.fromEntries(new FormData(form))
+    const wallet = String(d.payoutWallet)
+    if (!validatePayoutWallet(wallet)) {
+      setError('Payout wallet must decode to exactly 32 bytes')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
       const created = await registryEngine.suppliers.create({
         name: String(d.name),
-        payoutWallet: String(d.payoutWallet),
+        payoutWallet: wallet,
         businessEmail: String(d.businessEmail) || undefined,
         category: String(d.category) || undefined,
         notes: String(d.notes) || undefined,
@@ -55,8 +67,52 @@ export function Suppliers({ notify }: { notify: (m: string) => void }) {
     } catch (err) {
       if (err instanceof RegistryPortError) {
         setError(`${err.code}: ${err.message}`)
+        notify(`${err.code}: ${err.message}`)
       } else {
         setError(String(err))
+        notify(String(err))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const id = editId!
+    const form = e.currentTarget
+    const d = Object.fromEntries(new FormData(form))
+    const wallet = String(d.payoutWallet)
+    if (!validatePayoutWallet(wallet)) {
+      setError('Payout wallet must decode to exactly 32 bytes')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const updated = await registryEngine.suppliers.update(id, {
+        name: String(d.name),
+        payoutWallet: wallet,
+        businessEmail: String(d.businessEmail) || undefined,
+        category: String(d.category) || undefined,
+        notes: String(d.notes) || undefined,
+      })
+      setSuppliers(prev => prev === null ? [] : prev.map((s) => s.id === id ? updated : s))
+      setEditId(null)
+      setDraft({ name: '', payoutWallet: '', businessEmail: '', category: '', notes: '' })
+      notify(`Supplier ${updated.name} updated`)
+      const prev = suppliers?.find((s) => s.id === id)
+      if (prev && prev.verificationStatus === 'verified' && updated.verificationStatus !== 'verified') {
+        setNotice('Payout wallet changed: verification reset')
+        setTimeout(() => setNotice(null), 5000)
+      }
+    } catch (err) {
+      if (err instanceof RegistryPortError) {
+        setError(`${err.code}: ${err.message}`)
+        notify(`${err.code}: ${err.message}`)
+      } else {
+        setError(String(err))
+        notify(String(err))
       }
     } finally {
       setLoading(false)
@@ -68,26 +124,36 @@ export function Suppliers({ notify }: { notify: (m: string) => void }) {
     setError(null)
     try {
       const verified = await registryEngine.suppliers.verify(id)
-      setSuppliers(prev => prev === null ? [] : prev.map((s: Supplier) => s.id === id ? verified : s))
+      setSuppliers(prev => prev === null ? [] : prev.map((s) => s.id === id ? verified : s))
+      setNotice(null)
       notify(`Supplier ${verified.name} verified`)
     } catch (err) {
       if (err instanceof RegistryPortError) {
         setError(`${err.code}: ${err.message}`)
+        notify(`${err.code}: ${err.message}`)
       } else {
         setError(String(err))
+        notify(String(err))
       }
     } finally {
       setLoading(false)
     }
   }
 
-  if (loading) return <div className="panel"><div className="panel-head"><div><h1>Suppliers</h1><p>Manage your verified payment counterparties.</p></div></div><div style={{ padding: 24, textAlign: 'center' }}>Loading suppliers…</div></div>
-  if (error) return <div className="panel"><div className="panel-head"><div><h1>Suppliers</h1><p>Manage your verified payment counterparties.</p></div></div><div style={{ padding: 24, color: '#ef4444' }}>{error}</div></div>
+  const filteredSuppliers = suppliers?.filter((s) => {
+    const matchesStatus = statusFilter === 'all' || s.verificationStatus === statusFilter
+    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || (s.businessEmail?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
+    return matchesStatus && matchesSearch
+  })
+
+  const panels = []
+  if (open) panels.push(<Modal key="create" title="Create supplier" onClose={() => setOpen(false)}><form onSubmit={handleCreate}><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}><label className="field full">Supplier name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Acme Logistics Ltd"/></label><label className="field full">Payout wallet (Solana)<input name="payoutWallet" required value={draft.payoutWallet} onChange={e => setDraft({ ...draft, payoutWallet: e.target.value })} placeholder="7dHbWYKYz8KX6fG7vJq9P2mN3cR4tY5uE6wX7yZ8aB9"/></label><label className="field full" style={{ gridColumn: 'span 2' }}><small style={{ color: '#6b7280' }}>Must be base58, 32 bytes when decoded, 32-44 chars</small></label><label className="field full">Business email<input name="businessEmail" type="email" value={draft.businessEmail} onChange={e => setDraft({ ...draft, businessEmail: e.target.value })} placeholder="billing@acme.example"/></label><label className="field full">Category<input name="category" value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })} placeholder="Freight, SaaS, Marketing"/></label><label className="field full">Notes<textarea name="notes" value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Optional notes"/></label></div><div className="modal-actions"><button type="button" className="btn secondary" onClick={() => setOpen(false)}>Cancel</button><button className="btn primary" disabled={loading}>Create supplier</button></div></form></Modal>)
+  if (editId !== null) panels.push(<Modal key="edit" title="Edit supplier" onClose={() => { setEditId(null); setDraft({ name: '', payoutWallet: '', businessEmail: '', category: '', notes: '' }); }}><form onSubmit={handleEdit}><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}><label className="field full">Supplier name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Acme Logistics Ltd"/></label><label className="field full">Payout wallet (Solana)<input name="payoutWallet" required value={draft.payoutWallet} onChange={e => setDraft({ ...draft, payoutWallet: e.target.value })} placeholder="7dHbWYKYz8KX6fG7vJq9P2mN3cR4tY5uE6wX7yZ8aB9"/></label><label className="field full" style={{ gridColumn: 'span 2' }}><small style={{ color: '#6b7280' }}>Must be base58, 32 bytes when decoded, 32-44 chars</small></label><label className="field full">Business email<input name="businessEmail" type="email" value={draft.businessEmail} onChange={e => setDraft({ ...draft, businessEmail: e.target.value })} placeholder="billing@acme.example"/></label><label className="field full">Category<input name="category" value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })} placeholder="Freight, SaaS, Marketing"/></label><label className="field full">Notes<textarea name="notes" value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Optional notes"/></label></div><div className="modal-actions"><button type="button" className="btn secondary" onClick={() => { setEditId(null); setDraft({ name: '', payoutWallet: '', businessEmail: '', category: '', notes: '' }); }}>Cancel</button><button className="btn primary" disabled={loading}>Update supplier</button></div></form></Modal>)
+  if (notice !== null) panels.push(<div key="notice" style={{ padding: 16, background: '#fff4dd', border: '1px solid #f0d5a5', borderRadius: 8, marginBottom: 16 }}><strong>Notice:</strong> {notice}<div style={{ marginTop: 8, fontSize: 12, color: '#856404' }}>Payout wallet changed: verification reset.</div></div>)
 
   return <>
-    <PageHeading title="Suppliers" description="Create and verify the suppliers your agents pay. Payout wallets are snapshotted on creation and cannot be changed without re-verification." action="Add supplier" onAction={() => setOpen(true)}/>
     <div className="panel">
-      <div className="panel-head"><div><h2>Supplier directory</h2><p>{suppliers?.length ?? 0} registered suppliers</p></div></div>
+      <div className="panel-head"><div><h1>Suppliers</h1><p>Manage your verified payment counterparties.</p></div></div>
       <div style={{ padding: '16px 18px 18px' }}>
         <div className="table-scroll">
           <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
@@ -101,15 +167,17 @@ export function Suppliers({ notify }: { notify: (m: string) => void }) {
               </tr>
             </thead>
             <tbody>
-              {suppliers?.map((s: Supplier) => (
+              {filteredSuppliers?.map((s) => (
                 <tr key={s.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                   <td style={{ padding: 10, fontSize: 14 }}><b>{s.name}</b><br/><span style={{ fontSize: 12, color: '#6b7280' }}>{s.businessEmail || '—'}</span></td>
                   <td style={{ padding: 10, fontSize: 14 }}>{s.category || '—'}</td>
-                  <td style={{ padding: 10, fontSize: 14 }}><code style={{ fontSize: 11, color: '#6b7280' }}>{s.payoutWallet.slice(0, 6)}…{s.payoutWallet.slice(-4)}</code></td>
+                  <td style={{ padding: 10, fontSize: 14 }}><code style={{ fontSize: 11, color: '#6b7280' }}>{s.payoutWallet.slice(0, 6)}...{s.payoutWallet.slice(-4)}</code></td>
                   <td style={{ padding: 10, fontSize: 14 }}><Status>{s.verificationStatus}</Status></td>
                   <td style={{ padding: 10, textAlign: 'right' }}>
                     {s.verificationStatus === 'unverified' && <button className="btn primary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => handleVerify(s.id)}>Verify</button>}
                     {s.verificationStatus !== 'unverified' && <button className="btn secondary" style={{ fontSize: 12, padding: '4px 10px' }} disabled>Verified</button>}
+                    {s.verificationStatus !== 'unverified' && editId !== s.id && <button className="btn secondary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { setEditId(s.id); setDraft({ name: s.name, payoutWallet: s.payoutWallet, businessEmail: s.businessEmail || '', category: s.category || '', notes: s.notes || '' }); }}>Edit</button>}
+                    {editId === s.id && <button className="btn danger" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { setEditId(null); setDraft({ name: '', payoutWallet: '', businessEmail: '', category: '', notes: '' }); }}>Cancel</button>}
                   </td>
                 </tr>
               ))}
@@ -119,20 +187,6 @@ export function Suppliers({ notify }: { notify: (m: string) => void }) {
         </div>
       </div>
     </div>
-    {open && <Modal title="Create supplier" description="Enter the supplier details and Solana payout wallet. The wallet is snapshotted and pinned on first verification." onClose={() => setOpen(false)}>
-      <form onSubmit={handleCreate}>
-        <div className="modal-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <label className="field full">Supplier name<input name="name" required value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Acme Logistics Ltd"/></label>
-          <label className="field full">Payout wallet (Solana)<input name="payoutWallet" required value={draft.payoutWallet} onChange={e => setDraft({ ...draft, payoutWallet: e.target.value })} placeholder="7dHbWYKYz8KX6fG7vJq9P2mN3cR4tY5uE6wX7yZ8aB9"/></label>
-          <label className="field full">Business email<input name="businessEmail" type="email" value={draft.businessEmail} onChange={e => setDraft({ ...draft, businessEmail: e.target.value })} placeholder="billing@acme.example"/></label>
-          <label className="field full">Category<input name="category" value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })} placeholder="Freight, SaaS, Marketing"/></label>
-          <label className="field full">Notes<textarea name="notes" value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Optional notes about this supplier"/></label>
-        </div>
-        <div className="modal-actions">
-          <button type="button" className="btn secondary" onClick={() => setOpen(false)}>Cancel</button>
-          <button className="btn primary" disabled={loading}>Create supplier</button>
-        </div>
-      </form>
-    </Modal>}
+    {panels}
   </>
 }
