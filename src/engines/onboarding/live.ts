@@ -74,6 +74,15 @@ export class LiveOnboardingEngine implements OnboardingPort {
     const ownerId = auth?.user?.id
 
     const dbData = mapDraftToDb(step, data)
+
+    if (!existing) {
+      // First save: insert the organization so subsequent updates have a row to hit.
+      const { error: insertError } = await (supabase.from('organizations') as any)
+        .insert({ owner_id: ownerId, onboarding_step: nextStep, ...dbData })
+      if (insertError) throw insertError
+      return
+    }
+
     const { error } = await (supabase.from('organizations') as any)
       .update({ onboarding_step: nextStep, ...dbData })
       .eq('owner_id', ownerId)

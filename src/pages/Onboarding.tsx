@@ -165,7 +165,8 @@ export function Onboarding({ onComplete, startAt = 0, walletName }: { onComplete
         onComplete()
       } catch (err) {
         setCompleteState('error')
-        setCompleteError(err instanceof Error ? err.message : 'Failed to complete onboarding')
+        const message = err && typeof err === 'object' && 'message' in err ? String(err.message) : (err instanceof Error ? err.message : 'Failed to complete onboarding')
+        setCompleteError(message)
       }
       return
     }
