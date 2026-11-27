@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export function CheckpointPage() {
-  const { wallets, wallet, select, connect, connected, publicKey } = useWallet()
+  const { wallets, wallet, select, connected, publicKey } = useWallet()
   const [log, setLog] = useState<string[]>([])
   const [identities, setIdentities] = useState<string | null>(null)
   const [errorText, setErrorText] = useState<string | null>(null)
@@ -44,25 +44,25 @@ export function CheckpointPage() {
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
       if (!walletRef.current) throw new Error('Wallet was not set after selecting Phantom')
-      const activeWallet = walletRef.current
-      append(`Wallet set: ${activeWallet.adapter.name}`)
+      const adapter = phantom.adapter
+      append(`Wallet set: ${adapter.name}`)
 
-      if (!connected) {
-        append('Connecting...')
-        await connect()
-        append('Connected')
+      if (!adapter.connected) {
+        append('Connecting via adapter...')
+        await adapter.connect()
       } else {
-        append('Already connected')
+        append('Already connected via adapter')
       }
+      append(`Connected: ${adapter.publicKey?.toBase58()?.slice(0, 6) ?? 'n/a'}`)
 
       append('Calling supabase.auth.signInWithWeb3...')
+      const signMessage = (adapter as unknown as { signMessage?: (message: Uint8Array) => Promise<Uint8Array> }).signMessage
       const { data, error } = await supabase.auth.signInWithWeb3({
         chain: 'solana',
         statement: 'Airlock checkpoint test',
         wallet: {
-          signIn: (activeWallet.adapter as unknown as { signIn?: unknown }).signIn as never,
-          signMessage: (activeWallet.adapter as unknown as { signMessage?: unknown }).signMessage as never,
-          publicKey: activeWallet.adapter.publicKey,
+          publicKey: adapter.publicKey,
+          signMessage,
         },
       })
       if (error) throw error
