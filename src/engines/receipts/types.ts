@@ -10,6 +10,10 @@ export interface Receipt {
   status: 'authorized' | 'settled'
   issuedAt: string
   issuedBy: string
+  contentHash: string | null
+  anchorSignature: string | null
+  anchorCluster: string | null
+  anchoredAt: string | null
 }
 
 export interface ReceiptsEnginePort {

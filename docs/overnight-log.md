@@ -191,3 +191,28 @@
 
 
 
+
+## PART 9: Evaluation slice completed (2026-11-28)
+- Fully local evaluation: src/engines/evaluation/live.ts calls evaluatePaymentRules directly; no VITE_EVALUATION_API_URL.
+- Attack Lab wired to live engine; Activity + Approvals pages populate from Supabase evaluations table via DashboardApp.
+- docs/testing/evaluation.md written; scripts/verify/evaluation.ts created and added as pnpm verify:evaluation.
+- FEATURES: evaluation, requests, approvals all 'live' (chain remains in_progress).
+- Gates green: npx tsc --noEmit clean, npx vitest run 46/46 pass, npx vite build clean.
+- Pushed to origin foundation (commit deecc83).
+
+### Needs Elikem
+- Run pnpm verify:evaluation with .env.local to confirm Supabase connectivity and local evaluator path.
+- Manual pass through docs/testing/evaluation.md (requires wallet + hosted project).
+- Cross-user checks require AIRLOCK_ACCESS_TOKEN_2.
+- Approvals approval/rejection RPCs (approve_evaluation/reject_evaluation) need a second reviewer token for two-person flow verification.
+
+
+## PART 10: Solana receipt anchoring slice (2026-11-28)
+- Migration 0007: receipts gain anchor_signature/anchor_cluster/anchored_at columns + record_receipt_anchor SECURITY DEFINER RPC (org-checked, cluster fixed to devnet, SET search_path = '').
+- src/engines/chain/{types,live,index}.ts: anchorReceipt (SPL Memo memo program, airlock:v1:<receiptId>:<contentHash>), verifyAnchor (getParsedTransaction, memo match + tx success), explorerUrl; AnchorError typed codes (wallet_not_connected, wallet_rejected, insufficient_sol, rpc_failure, receipt_not_found, already_anchored, validation, unknown).
+- Receipts page: anchor button (wallet-gated), "Anchored on Solana" explorer badge, verify-on-chain button; receipt status stays 'authorized'.
+- Pipeline: anchoring line shows real anchored-receipt count; FEATURES.anchoring = 'live'.
+- scripts/verify/anchor.ts + pnpm verify:anchor; docs/testing/anchor.md; src/engines/chain/chain.test.ts (10 tests).
+- Bugs fixed: migration 0006 ambiguous org_id aliases; DashboardApp evaluations join via invoices FK.
+- Gates green: npx tsc --noEmit clean, npx vitest run 56/56 pass, npx vite build clean, pnpm verify:anchor 9 PASS / 1 SKIPPED.
+- Needs Elikem: pnpm verify:anchor with .env.local; manual pass through docs/testing/anchor.md (requires funded devnet wallet + hosted project); cross-user and second-organizer checks need AIRLOCK_ACCESS_TOKEN_2.

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { registryEngine } from '../engines/registry/index'
+import { receiptsEngine } from '../engines/receipts/index'
 import { Status } from '../ui/Status'
 import { InProgress } from '../ui/InProgress'
 import { FEATURES, type FeatureName } from '../config/features'
@@ -34,17 +35,20 @@ export function Pipeline({ navigate }: { navigate: (p: string) => void }) {
     latestDecisionRule: null,
   })
   const [error, setError] = useState<string | null>(null)
+  const [anchoredCount, setAnchoredCount] = useState(0)
 
   useEffect(() => {
     async function load() {
       try {
-        const [suppliers, invoices] = await Promise.all([
+        const [suppliers, invoices, receipts] = await Promise.all([
           registryEngine.suppliers.list(),
           registryEngine.invoices.list(),
+          receiptsEngine.listReceipts(),
         ])
         const verifiedSupplierCount = suppliers.filter((s) => s.verificationStatus === 'verified').length
         const openInvoiceCount = invoices.filter((i) => i.status === 'open').length
         const attestedInvoiceCount = invoices.filter((i) => i.status === 'attested').length
+        setAnchoredCount(receipts.filter((r) => r.anchorSignature).length)
         setCounts({
           supplierCount: suppliers.length,
           verifiedSupplierCount,
@@ -53,7 +57,7 @@ export function Pipeline({ navigate }: { navigate: (p: string) => void }) {
           attestedInvoiceCount,
           requestCount: 0,
           heldCount: 0,
-          receiptCount: 0,
+          receiptCount: receipts.length,
           latestDecision: null,
           latestDecisionRule: null,
         })
@@ -102,7 +106,12 @@ export function Pipeline({ navigate }: { navigate: (p: string) => void }) {
           </div>
         ))}
         <div style={{ marginTop: 12, padding: '12px 16px', fontSize: 12, color: '#6c757d' }}>
-          On-chain settlement shows <strong>In progress</strong> until the chain feature is live; it never fabricates a transaction signature.
+          Anchoring: <strong>{anchoredCount} anchored on Solana</strong>
+          {anchoredCount > 0 ? (
+            <div style={{ marginTop: 4 }}>
+              On-chain settlement shows <strong>In progress</strong> until the chain feature is live; it never fabricates a transaction signature.
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

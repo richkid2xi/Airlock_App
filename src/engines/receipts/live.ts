@@ -5,7 +5,7 @@ const SUPABASE_ANY = supabase as any
 
 export class LiveReceiptsEngine implements ReceiptsEnginePort {
   async listReceipts(): Promise<Receipt[]> {
-    const result = await SUPABASE_ANY.from('receipts').select('id, evaluation_id, invoice_id, supplier_id, agent_id, payee_wallet, amount_minor, currency, status, issued_at, issued_by').order('issued_at', { ascending: false })
+    const result = await SUPABASE_ANY.from('receipts').select('id, evaluation_id, invoice_id, supplier_id, agent_id, payee_wallet, amount_minor, currency, status, issued_at, issued_by, content_hash, anchor_signature, anchor_cluster, anchored_at').order('issued_at', { ascending: false })
 
     if (result.error) {
       throw new Error(`list receipts failed: ${result.error.message ?? String(result.error)}`)
@@ -23,6 +23,10 @@ export class LiveReceiptsEngine implements ReceiptsEnginePort {
       status: row.status,
       issuedAt: row.issued_at,
       issuedBy: row.issued_by,
+      contentHash: row.content_hash ?? null,
+      anchorSignature: row.anchor_signature ?? null,
+      anchorCluster: row.anchor_cluster ?? null,
+      anchoredAt: row.anchored_at ?? null,
     }))
   }
 

@@ -39,7 +39,7 @@ export function DashboardApp({ onLogout, path, navigate }: { onLogout: () => voi
       if (path.startsWith('/app/activity') || path.startsWith('/app/approvals')) {
         const { data, error } = await supabase
           .from('evaluations')
-          .select('*, invoices!inner(supplier_id), agents!inner(name), suppliers!inner(name)')
+          .select('*, invoices!inner(supplier_id, suppliers!inner(name)), agents!inner(name)')
           .order('evaluated_at', { ascending: false })
 
         if (error) {

@@ -13,7 +13,8 @@
     "verify:registry": "npx tsx scripts/verify/registry.ts",
     "verify:pipeline": "npx tsx scripts/verify/pipeline.ts",
     "verify:evaluation": "npx tsx scripts/verify/evaluation.ts",
-    "verify:approvals": "npx tsx scripts/verify/approvals.ts"
+    "verify:approvals": "npx tsx scripts/verify/approvals.ts",
+    "verify:anchor": "npx tsx scripts/verify/anchor.ts"
   },
   "dependencies": {
     "@solana/wallet-adapter-base": "^0.9.28",

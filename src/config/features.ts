@@ -13,7 +13,8 @@ export type FeatureName =
   | 'policies'
   | 'approvals'
   | 'chain'
-  | 'metrics';
+  | 'metrics'
+  | 'anchoring';
 
 export type FeatureState = 'live' | 'in_progress';
 
@@ -27,6 +28,7 @@ export const FEATURES: Record<FeatureName, FeatureState> = {
   approvals: 'live',
   chain: 'in_progress',
   metrics: 'live',
+  anchoring: 'live',
 } as const;
 
 export function isFeatureLive(feature: FeatureName): boolean {
@@ -47,4 +49,5 @@ export const FEATURE_LABELS: Array<{ key: FeatureName; label: string }> = [
   { key: 'approvals', label: 'Approvals' },
   { key: 'chain', label: 'On-chain settlement' },
   { key: 'metrics', label: 'Dashboard metrics' },
+  { key: 'anchoring', label: 'Receipt anchoring' },
 ];
