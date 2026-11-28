@@ -14,13 +14,8 @@ export class LiveMetricsEngine implements MetricsEnginePort {
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     const { data, error } = await this.supa.rpc('get_dashboard_metrics')
 
-    if (error) {
-      const msg = error?.message ?? String(error)
-      throw new Error(`Dashboard metrics RPC failed: ${msg}`)
-    }
-
-    if (!data) {
-      throw new Error('Dashboard metrics RPC returned no data')
+    if (error || !data) {
+      throw new Error('Dashboard data could not be loaded')
     }
 
     const metrics = data as DashboardMetrics

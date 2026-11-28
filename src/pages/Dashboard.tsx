@@ -40,14 +40,20 @@ export function Dashboard({ setPage }: { setPage: (p: string) => void }) {
       const data = await metricsEngine.getDashboardMetrics()
       setMetrics(data)
     } catch (err) {
-      setMetricsError(String(err))
+      setMetricsError('Dashboard data could not be loaded')
     } finally {
       setLoading(false)
     }
   }, [])
 
+  // Initial load
   useEffect(() => {
     refresh()
+  }, [refresh])
+
+  // Polling + focus refresh — only while not in error state
+  useEffect(() => {
+    if (metricsError) return
     const onFocus = () => { refresh() }
     window.addEventListener('focus', onFocus)
     const interval = setInterval(refresh, 30000)
@@ -55,7 +61,7 @@ export function Dashboard({ setPage }: { setPage: (p: string) => void }) {
       window.removeEventListener('focus', onFocus)
       clearInterval(interval)
     }
-  }, [refresh])
+  }, [refresh, metricsError])
 
   // Registry is live; due-soon is real and scoped to invoices only.
   useEffect(() => {
@@ -95,7 +101,13 @@ export function Dashboard({ setPage }: { setPage: (p: string) => void }) {
 
   return <>
     <div className="welcome-row"><div><div className="date-label"></div><h1>Dashboard</h1><p>Here's what's happening across your payment environment.</p></div><button className="btn secondary" onClick={() => setPage('/app/attack-lab')}><Icon name="flask"/> Run security test</button></div>
-    {metricsError && <div style={{ padding: '12px 18px', color: '#ef4444', marginBottom: 12 }}>{metricsError}</div>}
+    {metricsError && (
+      <div className="panel" style={{ padding: 16 }}>
+        <div className="panel-head"><div><h2>Dashboard</h2></div></div>
+        <div style={{ padding: 12, color: '#ef4444' }}>{metricsError}</div>
+        <button className="btn primary" onClick={() => refresh()}>Retry</button>
+      </div>
+    )}
     <div className="metrics-grid">
       {requestsLive ? (
         <Metric icon="shield" label="Funds protected" value={loading ? '--' : String(blockedCount)} note={`${blockedCount} blocked, ${heldCount} held by policy`} />
